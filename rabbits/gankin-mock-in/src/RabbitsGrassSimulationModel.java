@@ -176,6 +176,12 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 
 	public void buildModel() {
 		System.out.println("build Model");
+                if(worldXSize<0){
+                    worldXSize=0;
+                }
+                if(worldYSize<0){
+                    worldYSize=0;
+                }
 		rabbitSpace = new Space(worldXSize, worldYSize, grassEnergy);
 		rabbitSpace.growGrass(grass);
 
