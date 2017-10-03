@@ -56,9 +56,9 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 	private int worldXSize = 20;
 	private int worldYSize = 20;
 	private int grass = 42;
-	private int grassGrowRate = 15; // New grass per tick
-	private int birthThreshold = 15;
-	private int grassEnergy = 4;
+	private int grassGrowRate = 10; // New grass per tick
+	private int birthThreshold = 20;
+	private int grassEnergy = 3;
 	private int maxStartEnergy = 12;//energy rabbits are born with
 	private int minStartEnergy = 8;
 
@@ -150,17 +150,17 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 		schedule = new Schedule(1);
 
 		if (displSurf != null) {
-			displSurf.dispose();
+//			displSurf.dispose();
 		}
 		displSurf = null;
 
 		if (amountGrass != null) {
-			amountGrass.dispose();
+//			amountGrass.dispose();
 		}
 		amountGrass = null;
 
 		if (energyDistr != null) {
-			energyDistr.dispose();
+//			energyDistr.dispose();
 		}
 		energyDistr = null;
 
@@ -255,10 +255,10 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 
 		schedule.scheduleActionAtInterval(10, new CarryDropPlotGrass());
 
-		schedule.scheduleActionAtInterval(10, new CarryDropUpdateEnerDistr());
+		schedule.scheduleActionAtInterval(1, new CarryDropUpdateEnerDistr());
 
-		schedule.scheduleActionAtInterval(10, new CarryDropCountLiving());
-		schedule.scheduleActionAtInterval(5, new CarryDropCountBirth());
+		schedule.scheduleActionAtInterval(1, new CarryDropCountLiving());
+		schedule.scheduleActionAtInterval(1, new CarryDropCountBirth());
 		schedule.scheduleActionAtInterval(1, new CarryDropCountGrass(grassGrowRate));
 
 

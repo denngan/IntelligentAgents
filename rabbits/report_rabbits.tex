@@ -2,6 +2,7 @@
 
 \usepackage{amsmath}
 \usepackage{textcomp}
+\usepackage{booktabs}
 \usepackage[top=0.8in, bottom=0.8in, left=0.8in, right=0.8in]{geometry}
 % Add other packages here %
 
@@ -9,7 +10,7 @@
 
 % Put your group number and names in the author field %
 \title{\bf Excercise 1.\\ Implementing a first Application in RePast: A Rabbits Grass Simulation.}
-\author{Group \textnumero: Student 1, Student 2}
+\author{Group \textnumero 29: Dennis Gankin, Daniel A. Mock}
 
 \begin{document}
 \maketitle
@@ -25,27 +26,88 @@
 \section{Results}
 % In this section, you study and describe how different variables (e.g. birth threshold, grass growth rate etc.) or combinations of variables influence the results. Different experiments with diffrent settings are described below with your observations and analysis
 
-\subsection{Experiment 1}
+\subsection{Experiment 1: Varying the Energy}
 
 \subsubsection{Setting}
+In this experiment, we changed the energy of the grass without changing any other factors.
+The BirthThreshold is set to 15 units, the grass growth rate to 15 grass/tick.
 
 \subsubsection{Observations}
-% Elaborate on the observed results %
+If the energy is set to 1, the population dies very slowly without generating any children, since a field of grass can only compensate for the energy consumption of a rabbit per tick.
 
-\subsection{Experiment 2}
+Otherwise, we see a that the average rabbit population increases with the grass energy.
+In the low energy area (2 - 10 energy/grass), we see a linear correlation between grass energy and rabbit population.
+This makes sense, since added energy per tick depends on only to parameters: energy per grass and grass growth rate.
+If there is twice as much energy in the system, twice the population can be sustained.
+
+If the energy increases more, the population does not increase anymore since the field is ''saturated'' with rabbits (250 rabbits in a 20x20 field).
+\begin{table}[]
+	\centering
+	\caption{Energy = 15, Birth Threshold = 15}
+%	\label{my-label}
+	\begin{tabular}{@{}llllllll@{}}
+		\toprule
+		Energy  & 2   & 3   & 4   & 8   & 10  & 40  & 100 \\ \midrule
+		Rabbits & 30  & 50  & 60  & 130 & 160 & 250 & 250 \\
+		Grass   & 100 & 135 & 100 & 70  & 60  & 50  & 50  \\ \bottomrule
+	\end{tabular}
+\end{table}
+
+\subsection{Experiment 2: Varying the Growth Rate}
 
 \subsubsection{Setting}
+In this we varied the grass growth rate while keeping the birth threshold and energy constant.
 
 \subsubsection{Observations}
-% Elaborate on the observed results %
+In this experiment, the growth rate of the grass was modified.
+We used Energy = 2 and Birth Threshold = 20 as other parameters.
 
-\vdots
+The first growth rate where the rabbits did not die instantly, was 8.
+Then, we doubled the growth rate which each experiment.
+For growth rates smaller than 80, the amount of rabbits doubled as well.
+For higher growth rates, the amount does not increase as much, since the space was already filled with grass.
+Observe that the grass amount is 290 in a 20\texttimes20 field with a rate of 80.
+Thus, a growth rate bigger than 110 does not increase the available grass for the rabbit population.
 
-\subsection{Experiment n}
+\begin{table}[]
+	\centering
+	\caption{Energy = 2, Birth Threshold = 20}
+	\label{my-label}
+	\begin{tabular}{@{}lllllll@{}}
+		\toprule
+		Rate    & 10  & 20  & 40  & 80  & 160     & 320     \\ \midrule
+		Rabbits & 20  & 40  & 80  & 155 & 180     & 190     \\
+		Grass   & 210 & 200 & 230 & 290 & 300-400 & 300-400 \\ \bottomrule
+	\end{tabular}
+\end{table}
+
+\subsection{Experiment 3: Keeping the Energy\texttimes Rate constant}
 
 \subsubsection{Setting}
+We kept the product of grass growth rate and grass energy constant.
+The product of the two is 40 and the birth threshold 20.
 
 \subsubsection{Observations}
+We observed, that with increasing energy and decreasing growth rate the rabbit population nearly stayed the same.
+When the growth got very low, the population fell a bit.
+However, the amount of grass fell with the decreasing growth rate.
+This makes sense, since the amount of grass only depends on the growth rate and the number of living rabbits.
 % Elaborate on the observed results %
+\begin{table}[]
+	\centering
+	\caption{Birth Threshold = 20. The rabbit population stays roughly the same.}
+	\label{my-label}
+	\begin{tabular}{@{}lllllll@{}}
+		\toprule
+		Energy  & 4   & 5  & 8     & 10    & 20 & 40 \\ \midrule
+		Rate    & 10  & 8  & 5     & 4     & 2  & 1  \\
+		Rabbits & 38  & 40 & 30-40 & 28-35 & 28 & 30 \\
+		Grass   & 110 & 90 & 60    & 55    & 35 & 30 \\ \bottomrule
+	\end{tabular}
+\end{table}
+
+\subsection{Experiment 4: Varying the Birth Threshold}
+\subsubsection{Setting}
+\subsubsection{Observations}
 
 \end{document}
