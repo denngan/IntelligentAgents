@@ -105,7 +105,7 @@ public class Rabbit implements Drawable {
         newY=(newY+grid.getSizeY())%grid.getSizeY();
         
         if(tryMove(newX,newY)){
-        energy+=space.takeGrassAt(x,y);
+        energy+=space.takeGrassAt(x,y); // move if no rabbit there 
         }
         else{
             setVXVY();
@@ -114,11 +114,11 @@ public class Rabbit implements Drawable {
     }
     
     private boolean tryMove(int newX,int newY){
-        return space.moveRabbitAt(x,y,newX,newY);
+        return space.moveRabbitAt(x,y,newX,newY); 
     }
     
     public void giveBirth(){
-        energy= (int) ((Math.random() *(maxEng-minEng))+minEng);
+        energy= (int) ((Math.random() *(maxEng-minEng))+minEng); //set energy back to birth energy
     }
 
     /**

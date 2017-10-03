@@ -95,7 +95,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 		}
 
 		public double getSValue() {
-			return (double) rabbitSpace.getTotalRabbits();
+                 	return (double) rabbitSpace.getTotalRabbits();
 		}
 
 	}
@@ -117,7 +117,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 		buildDisplay();
 
 		displSurf.display();
-		amountGrass.display();
+		amountGrass.display(); //Graphs
 		energyDistr.display();
 	}
 
@@ -220,7 +220,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 		}
 		class CarryDropCountBirth extends BasicAction {
 			public void execute() {
-				System.out.println(giveBirth() + " rabbits born");
+				System.out.println(giveBirth() + " rabbits born");   //creating new rabbits
 			}
 		}
 
@@ -232,18 +232,18 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 			}
 
 			public void execute() {
-				rabbitSpace.growGrass(grassAmount);
+				rabbitSpace.growGrass(grassAmount);   //creating new grass 
 			}
 		}
 
 		class CarryDropPlotGrass extends BasicAction {
 			public void execute() {
-				amountGrass.step();
+				amountGrass.step(); //grass and rabbit graph
 			}
 		}
 
 		class CarryDropUpdateEnerDistr extends BasicAction {
-			public void execute() {
+			public void execute() {   //energy distribution graph
 				if (countLivingRabbits() > 0) {
 					energyDistr.step();
 				} else {
@@ -259,7 +259,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 
 		schedule.scheduleActionAtInterval(10, new CarryDropCountLiving());
 		schedule.scheduleActionAtInterval(5, new CarryDropCountBirth());
-		schedule.scheduleActionAtInterval(1, new CarryDropCountGrass(grassGrowRate));
+		schedule.scheduleActionAtInterval(1, new CarryDropCountGrass(grassGrowRate)); // grow some grass per tick 
 
 
 	}
@@ -269,12 +269,14 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 
 		ColorMap map = new ColorMap();
 
-		//which colors do i need?
-		map.mapColor(0, Color.black); //background, no grass
-
-		for (int i = 1; i < 16; i++) {
+		map.mapColor(0, Color.black); //background
+                
+                //actually unecessary, only i=1 is enough, bc grass only has value 1
+		/*for (int i = 1; i < 16; i++) {
 			map.mapColor(i, Color.green);
-		}
+		}*/
+                //make grass green 
+                map.mapColor(1,Color.green);
 
 
 		Value2DDisplay displayGrass = new Value2DDisplay(rabbitSpace.getCurrentGrassSpace(), map);

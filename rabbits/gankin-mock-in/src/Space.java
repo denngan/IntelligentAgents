@@ -60,8 +60,8 @@ public class Space {
         }
         }
         
-        if (grass>1){
-            System.out.println("grew grass: "+grass);
+        if (setGrass>1){
+            System.out.println("grew grass: "+setGrass);
         }
         return (setGrass==grass);
     
@@ -69,15 +69,25 @@ public class Space {
                
     }
     
+    public int getGrassCount(int x, int y){
+        int i;
+            if (grassSpace.getObjectAt(x,y)!=null){
+                i=(((Integer)grassSpace.getObjectAt(x, y)).intValue()); 
+            }
+            else{
+               i=0;
+            }
+        return i;
+    }
     
     
     public int getGrassAt(int x, int y){
        int i;
             if (grassSpace.getObjectAt(x,y)!=null){
-                i=(((Integer)grassSpace.getObjectAt(x, y)).intValue())*grassEnergy; //why int value?
+                i=(((Integer)grassSpace.getObjectAt(x, y)).intValue())*grassEnergy; 
             }
             else{
-               i=grassEnergy;
+               i=0;
             }
         return i;
     }
@@ -111,7 +121,7 @@ public class Space {
                 retValue=true;
             }
             count++;
-        }
+        }        
         
         return retValue;
     }
@@ -126,7 +136,7 @@ public class Space {
         return grass;
     }
     
-    public boolean moveRabbitAt(int x,int y, int newX, int newY){
+    public boolean moveRabbitAt(int x,int y, int newX, int newY){ // move rabbit if cell is not occupied
         boolean retVal =false;
         if(!isCellOccupied(newX,newY)){
             Rabbit r=(Rabbit)rabbitSpace.getObjectAt(x, y);
@@ -142,7 +152,7 @@ public class Space {
         int forTwenty=0;
         for (int i=0; i<rabbitSpace.getSizeX();i++){
             for (int j=0; j<rabbitSpace.getSizeY();j++){
-                forTwenty+=getGrassAt(i,j)/grassEnergy;
+                forTwenty+=getGrassCount(i,j);
             }
         }
         return forTwenty;
