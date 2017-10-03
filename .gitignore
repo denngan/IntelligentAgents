@@ -24,3 +24,5 @@ hs_err_pid*
 *.gz
 
 *.pdf
+
+rabbits/gankin-mock-in/\.idea/
