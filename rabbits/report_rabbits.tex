@@ -19,9 +19,13 @@
 
 \subsection{Assumptions}
 % Describe the assumptions of your world model and implementation (e.g. is the grass amount bounded in each cell) %
+The space is modelled by a torus. Grass is shown green squares and rabbits as white or red squares when the energy drops under 5 points. 
+Grass and Rabbits are spreaded randomly. One cell can only contain one grass entity. Rabbits move randomly. Two rabbits cannot be on the same cell at once. A rabbit is born with a randomly chosen amount of energy between 8 and 12 points. Rabbits move randomly. With each step rabbits lose one energy point. When reaching a cell containing grass the rabbit absorbs the grass energy which can be defined by the user. The initial amount of grass and rabbits in the space can also be defined by the user. New grass is created and spreaded randomly every tick. The user can define how many grass entities are spreaded per tick. When an rabbit reaches the energy threshold, also defined by the user a new rabbit is created and added to the space (birth) and the father rabbit falls back to the initial energy level randomly chosen between 8 and 12 points. The space dimensions can also be modified by the user.
+
 
 \subsection{Implementation Remarks}
 % Provide important details about your implementation, such as handling of boundary conditions %
+In general valid inputs are recommended. When entering inputs out of the possible bounds, e.g. more rabbits than there is space, the model creates the maximum amount of rabbits but not more and the same with grass. Negative grass energy is possible. Rabbits will lose enrgy when eating grass then. All other negative inputs will be changed to 0. Doubles as input will be read as Integers by Java, so the numbers after the comma will not be taken into account. 
 
 \section{Results}
 % In this section, you study and describe how different variables (e.g. birth threshold, grass growth rate etc.) or combinations of variables influence the results. Different experiments with diffrent settings are described below with your observations and analysis
