@@ -1,0 +1,97 @@
+\documentclass[11pt]{article}
+
+\usepackage{amsmath}
+\usepackage{textcomp}
+\usepackage[top=0.8in, bottom=0.8in, left=0.8in, right=0.8in]{geometry}
+% add other packages here
+
+% put your group number and names in the author field
+\title{\bf Exercise 2: A Reactive Agent for the Pickup and Delivery Problem}
+\author{Group \textnumero 29: Dennis Gankin, Daniel Mock}
+
+% the report should not be longer than 3 pages
+
+\begin{document}
+\maketitle
+
+\section{Problem Representation}
+
+\subsection{Representation Description}
+% describe how you design the state representation, the possible actions, the reward table and the probability transition table
+\begin{description}
+	\item [State representation] The states have only two diffrent attributes.
+		\begin{description}
+			\item[1.] The city the agent is currently in.
+			\item[2.] Whether a task exists in this city and what the task's destination city would be.
+		\end{description}
+	\item [Possible actions] The agent can perform two different actions in each state. He can either move to another city or pickup a task if there is one in the current city. Both actions take the agent to a state with a new current city. Thus the actions do not allow the agent to stay in his current city.
+	\item[Reward Table] The reward table stores all rewards for changing states. For computing the reward of a change of states one needs the expected reward r and the costs for travelling between the cities of the two states c. If a task exists in the current state then r equals the task's expected reward otherwise r equals zero.
+	\item[Probability Transition Table] This table represents the probability to get from state s to state s'. As the agent's goal is to maximize his reward the table stores the probablyility that there is a task available from the current city to the next state's city.  
+\end{description}
+
+
+
+
+\subsection{Implementation Details}
+% describe the implementation details of the representations above and the implementation details of the reinforcement learning algorithm you implemented
+A reactive agent is implemented. That means that the agent will compute his optimal actions in advance. 
+The state class represents the states with the variables currenCity and taskCity. taskCity can equal null. in this case there is no task available. otherwise there is a task available from the current city to the taskCity. 
+The method computeStrategy returns a HashMap that maps the optimal destination citiies to each possible state. The computation is done by value iteration. The vector V is stored as a hashmap that maps reward values to states. 
+The method infiniteHorizon computes the multiplication V*T. T is represented in td.propability. 
+The reward table is represented in td.reward. The optimal strategy is saved in the variable strategy.
+
+The act() method implements the agent's behaviour. The agent looks up his best action in the current state in the hashmap strategy. If the city he will move to equals the available task's destination city then the agent picks up the task. Otherwise the agent moves without picking up the task.
+
+
+\section{Results}
+% in this section, you describe several results from the experiments with your reactive agent
+
+\subsection{Experiment 1: Discount factor}
+% the purpose of this experiment is to understand how the discount factor influences the result
+This experiment tests the discount factor's influence on the computed strategy.  
+
+\subsubsection{Setting}
+% you describe how you perform the experiment (you also need to specify the configuration used for the experiment)
+The experiment will test the discount factor's influence on the strategie's computation and on the average reward the agent gets after some amount of actions by varying the discount factor. In order to get reliable results the topology and the task distributen will stay fixed during the experiment. 
+
+\subsubsection{Observations}
+% you describe the experimental results and the conclusions you inferred from these results
+A discount factor smaller than one makes the computation converge. The factor sets the importance of the future actions. The bigger the factor the more future actions contribute to the sum. Therefore a higher discount factor causes more iterations when computing the optimal strategy with value iterations. With a small discount factor the future actions contribute much less to the sum and much less iterations are needed.  
+
+graph with differnt iterations.
+
+
+
+\subsection{Experiment 2: Comparisons with dummy agents}
+% you compare the results of your agent with two dummy agents: the random agent that was already given in the starter files and another dummy agent that you define and create. You should report the results from the simulations using the topologies given in the starter files and optionally, additional topologies that you create.
+
+
+
+\subsubsection{Setting}
+% you describe how you perform the experiment and you describe the dummy agent you created (you also need to specify the configuration used for the experiment)
+This experiment compares the implemented reactive agent's actions and performance to a random agent and second dummy agent. The topology is fixed in  order to get comparable results. 
+\begin{description}
+\item[configuration]bla bla
+\item[random agent]
+The random agent choses his destination randomly. If there is a task at his current position going to the city he chose then the task is picked up and delivered otherwise the agent will move without the task.
+\item [dummy agent]
+The implemented dummy agent prioritizes the tasks. If a task is available in his current city he will always chose to pick up and deliver the task. Only when no task is available the dummy agent will chose a random city in the neighbourhood to go to. 
+
+
+\end{description}
+
+
+
+\subsubsection{Observations}
+% elaborate on the observed results
+
+\vdots
+
+\subsection{Experiment n}
+% other experiments you would like to present
+
+\subsubsection{Setting}
+
+\subsubsection{Observations}
+
+\end{document}
