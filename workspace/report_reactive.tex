@@ -6,6 +6,7 @@
 % add other packages here
 \usepackage{listings}
 
+ \usepackage{booktabs}
 
 % put your group number and names in the author field
 \title{\bf Exercise 2: A Reactive Agent for the Pickup and Delivery Problem}
@@ -26,9 +27,9 @@
 			\item[1.] The city the agent is currently in.
 			\item[2.] Whether a task exists in this city and what the task's destination city would be.
 		\end{description}
-	\item [Possible actions] The agent can perform two different actions in each state. He can either move to another city or pickup a task if there is one in the current city. Both actions take the agent to a state with a new current city. Thus the actions do not allow the agent to stay in his current city.
-	\item[Reward Table] The reward table stores all rewards for changing states. The actual reward for travelling from current city \(i\) to current city \(j\) is computed by \(R_{ij}=r_{ij}+c_{ij} \) with  \(r_{ij}\) being the expected task reward from city \(i\) to city \(j\) and \(c_{ij}\) being the travelling costs between the cities of the two states. If a task exists in the current state then \(r\) equals the task's expected reward otherwise \(r_{ij} =0\). 
-	\item[Probability Transition Table] This table represents the probability to get from state \(s\) to state \(s'\). As the agent's goal is to maximize his reward the table stores the probablyility that there is a task available from the current city to the next state's city.  
+	\item [Possible actions] The agent can perform two different actions in each state. He can either move to another city or pickup a task if there is one in the current city. Both actions take the agent to a state with a new current city. Thus, the actions do not allow the agent to stay in his current city.
+	\item[Reward Table] The reward table stores all rewards for changing states. The actual reward for traveling from current city \(i\) to current city \(j\) is computed by \(R_{ij}=r_{ij} - c_{ij} \) with  \(r_{ij}\) being the expected task reward from city \(i\) to city \(j\) and \(c_{ij}\) being the traveling costs between the cities of the two states. If a task exists in the current state then \(r\) equals the task's expected reward otherwise \(r_{ij} =0\). 
+	\item[Probability Transition Table] This table represents the probability to get from state \(s\) to state \(s'\). As the agent's goal is to maximize his reward the table stores the probability that there is a task available from the current city to the next state's city.  
 \end{description}
 
 
@@ -37,11 +38,11 @@
 \subsection{Implementation Details}
 % describe the implementation details of the representations above and the implementation details of the reinforcement learning algorithm you implemented
 A reactive agent is implemented. That means that the agent will compute his optimal actions in advance. 
-The {\tt state} class represents the states with the variables {\tt currentCity}and {\tt taskCity}. {\tt taskCity} can equal {\tt null}. In this case there is no task available. Otherwise there is a task available from {\tt taskCity} to {\tt taskCity}. 
-The method {\tt computeStrategy} returns a {\tt HashMap} that maps the optimal destination citiies to each possible state. The computation is done by value iteration. The vector \(V\) is also stored as a {\tt HashMap} that maps reward values to states. 
+The {\tt State} class represents the states with the variables {\tt currentCity}and {\tt taskCity}. {\tt taskCity} can equal {\tt null}. In this case there is no task available. Otherwise, there is a task available from {\tt taskCity} to {\tt taskCity}. 
+The method {\tt computeStrategy} returns a {\tt HashMap} that maps the optimal destination cities to each possible state. The computation is done by value iteration. The vector \(V\) is also stored as a {\tt HashMap} that maps reward values to states. 
 The method {\tt infiniteHorizzzon} computes the multiplication \(V*T\). \(T\) is represented by {\tt td.propability}. 
 The reward table is stored in {\tt td.reward}. The optimal strategy is saved in the variable {\tt strategy} after computation.
-The {\tt act()} method implements the agent's behaviour. The agent looks up his best action in the current state in the hashmap {\tt strategy}. If the city he will move to equals the available task's destination city then the agent picks up the task. Otherwise the agent moves without picking up the task. ..good enough value?
+The {\tt act()} method implements the agent's behaviour. The agent looks up his best action in the current state in the hashmap {\tt strategy}. If the city he will move to equals the available task's destination city then the agent picks up the task. Here, we assume that the rewards of the deliveries are always non-negative. Otherwise, the agent moves without picking up the task. ..good enough value?
 
 
 \section{Results}
@@ -82,14 +83,47 @@ Average reward
 
 \subsubsection{Setting}
 % you describe how you perform the experiment and you describe the dummy agent you created (you also need to specify the configuration used for the experiment)
-This experiment compares the implemented reactive agent's actions and performance to a random agent and second dummy agent. The topology is fixed in  order to get comparable results. 
-\begin{description}
-\item[configuration]bla bla
-\item[random agent]
-The random agent choses his destination randomly. If there is a task at his current position going to the city he chose then the task is picked up and delivered otherwise the agent will move without the task.
-\item [dummy agent]
-The implemented dummy agent prioritizes the tasks. If a task is available in his current city he will always chose to pick up and deliver the task. Only when no task is available the dummy agent will chose a random city in the neighbourhood to go to. 
+This experiment compares the implemented reactive agent's actions and performance to a random agent and second dummy agent.
+We use every of the five topologies for this test.
 
+However, in the last two experiments the distribution of \texttt{no-task} was altered.
+In the first one, it was changed to 0, i.e., there is always a task in a city.
+In the second one, it was changed to 0.8..0.9, to test what happens if there are very few tasks available.
+\begin{description}
+\item[configuration] We use the standard configuration and the discount is set to 0.85.
+\item[random agent]
+This is the agent delivered with the template.
+He chooses a task as his action, if available and otherwise he moves to a random neighbor city.
+\item [greedy agent]
+This agent always chooses a task if it is available.
+Otherwise, he chooses the city with the highest expected reward of the available tasks there.
+
+Our agent is performs the best, followed by the greedy agent and the random agent is the worst.
+However, the difference between our agent and the greedy one is not very huge.
+In the last experiment, the greedy agent even outperforms our agent very slighty. 
+This result is however in the uncertainty of the measurement.
+
+Another observation is, that the average reward for the RLA agent converged slower than for the two others.
+
+In the second last experiment, where there is always a task available in a city, the rewards increase for every agent significantly.
+The ranking does not change.
+
+In the last experiment (with very few tasks), the rewards decrease very strongly and the greedy agent catches up to our agent.
+% Please add the following required packages to your document preamble:
+\begin{table}[]
+	\centering
+	\caption{On the left side is the average reward per kilometer, on the right side is the average reward.
+	In the last two experiments, the distribution of ''no task'' was changed.}
+	\label{my-label}
+	\begin{tabular}{@{}lllllllllllll@{}}
+		\toprule
+		Map             & \multicolumn{2}{l}{NL} & \multicolumn{2}{l}{FR} & \multicolumn{2}{l}{CH} & \multicolumn{2}{l}{EN} & \multicolumn{2}{l}{FR} & \multicolumn{2}{l}{FR} \\ \midrule
+		something       &           &            &           &            &           &            &           &            & 0.0       &            & 0.8-0.9     &          \\
+		Our RLA         & 4.5       & 45.3k      & 0.68      & 39.5k      & 3.0       & 46.0k      & 2.65      & 45.7k      & 0.8       & 54.8k      & 0.22        & 8.5k     \\
+		Greedy Bot      & 4.1       & 44.3k      & 0.6       & 38.0k      & 2.6       & 45.5k      & 2.25      & 44.9k      & 0.67      & 52.6k      & 0.22        & 8.6k     \\
+		Random Template & 3.5       & 35.9k      & 0.5       & 31.1k      & 2.3       & 37.2k      & 2.0       & 36.5k      & 0.6       & 44.2k      & 0.1         & 5.0k     \\ \bottomrule
+	\end{tabular}
+\end{table}
 
 \end{description}
 

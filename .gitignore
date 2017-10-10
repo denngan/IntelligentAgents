@@ -26,3 +26,5 @@ hs_err_pid*
 *.pdf
 
 rabbits/gankin-mock-in/\.idea/
+
+*.aux

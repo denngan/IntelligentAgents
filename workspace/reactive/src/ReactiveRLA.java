@@ -1,4 +1,4 @@
-package template;
+//package template;
 
 import java.util.*;
 
@@ -15,7 +15,7 @@ import logist.task.TaskDistribution;
 import logist.topology.Topology;
 import logist.topology.Topology.City;
 
-public class ReactiveTemplate implements ReactiveBehavior {
+public class ReactiveRLA implements ReactiveBehavior {
 
 	private Random random;
 	private double pPickup;
