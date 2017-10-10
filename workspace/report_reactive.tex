@@ -4,6 +4,8 @@
 \usepackage{textcomp}
 \usepackage[top=0.8in, bottom=0.8in, left=0.8in, right=0.8in]{geometry}
 % add other packages here
+\usepackage{listings}
+
 
 % put your group number and names in the author field
 \title{\bf Exercise 2: A Reactive Agent for the Pickup and Delivery Problem}
@@ -25,8 +27,8 @@
 			\item[2.] Whether a task exists in this city and what the task's destination city would be.
 		\end{description}
 	\item [Possible actions] The agent can perform two different actions in each state. He can either move to another city or pickup a task if there is one in the current city. Both actions take the agent to a state with a new current city. Thus the actions do not allow the agent to stay in his current city.
-	\item[Reward Table] The reward table stores all rewards for changing states. For computing the reward of a change of states one needs the expected reward r and the costs for travelling between the cities of the two states c. If a task exists in the current state then r equals the task's expected reward otherwise r equals zero.
-	\item[Probability Transition Table] This table represents the probability to get from state s to state s'. As the agent's goal is to maximize his reward the table stores the probablyility that there is a task available from the current city to the next state's city.  
+	\item[Reward Table] The reward table stores all rewards for changing states. The actual reward for travelling from current city \(i\) to current city \(j\) is computed by \(R_{ij}=r_{ij}+c_{ij} \) with  \(r_{ij}\) being the expected task reward from city \(i\) to city \(j\) and \(c_{ij}\) being the travelling costs between the cities of the two states. If a task exists in the current state then \(r\) equals the task's expected reward otherwise \(r_{ij} =0\). 
+	\item[Probability Transition Table] This table represents the probability to get from state \(s\) to state \(s'\). As the agent's goal is to maximize his reward the table stores the probablyility that there is a task available from the current city to the next state's city.  
 \end{description}
 
 
@@ -35,12 +37,11 @@
 \subsection{Implementation Details}
 % describe the implementation details of the representations above and the implementation details of the reinforcement learning algorithm you implemented
 A reactive agent is implemented. That means that the agent will compute his optimal actions in advance. 
-The state class represents the states with the variables currenCity and taskCity. taskCity can equal null. in this case there is no task available. otherwise there is a task available from the current city to the taskCity. 
-The method computeStrategy returns a HashMap that maps the optimal destination citiies to each possible state. The computation is done by value iteration. The vector V is stored as a hashmap that maps reward values to states. 
-The method infiniteHorizon computes the multiplication V*T. T is represented in td.propability. 
-The reward table is represented in td.reward. The optimal strategy is saved in the variable strategy.
-
-The act() method implements the agent's behaviour. The agent looks up his best action in the current state in the hashmap strategy. If the city he will move to equals the available task's destination city then the agent picks up the task. Otherwise the agent moves without picking up the task.
+The {\tt state} class represents the states with the variables {\tt currentCity}and {\tt taskCity}. {\tt taskCity} can equal {\tt null}. In this case there is no task available. Otherwise there is a task available from {\tt taskCity} to {\tt taskCity}. 
+The method {\tt computeStrategy} returns a {\tt HashMap} that maps the optimal destination citiies to each possible state. The computation is done by value iteration. The vector \(V\) is also stored as a {\tt HashMap} that maps reward values to states. 
+The method {\tt infiniteHorizzzon} computes the multiplication \(V*T\). \(T\) is represented by {\tt td.propability}. 
+The reward table is stored in {\tt td.reward}. The optimal strategy is saved in the variable {\tt strategy} after computation.
+The {\tt act()} method implements the agent's behaviour. The agent looks up his best action in the current state in the hashmap {\tt strategy}. If the city he will move to equals the available task's destination city then the agent picks up the task. Otherwise the agent moves without picking up the task. ..good enough value?
 
 
 \section{Results}
@@ -48,17 +49,29 @@ The act() method implements the agent's behaviour. The agent looks up his best a
 
 \subsection{Experiment 1: Discount factor}
 % the purpose of this experiment is to understand how the discount factor influences the result
-This experiment tests the discount factor's influence on the computed strategy.  
+This experiment analyses the discount factor's influence on the computed strategy.  
 
 \subsubsection{Setting}
 % you describe how you perform the experiment (you also need to specify the configuration used for the experiment)
-The experiment will test the discount factor's influence on the strategie's computation and on the average reward the agent gets after some amount of actions by varying the discount factor. In order to get reliable results the topology and the task distributen will stay fixed during the experiment. 
+The experiment will test the discount factor's influence on the strategy's computation and on the average reward the agent gets after some amount of actions by varying the discount factor. In order to get reliable results the topology and the task distribution will stay fixed during the experiment. 
 
 \subsubsection{Observations}
 % you describe the experimental results and the conclusions you inferred from these results
-A discount factor smaller than one makes the computation converge. The factor sets the importance of the future actions. The bigger the factor the more future actions contribute to the sum. Therefore a higher discount factor causes more iterations when computing the optimal strategy with value iterations. With a small discount factor the future actions contribute much less to the sum and much less iterations are needed.  
+A discount factor smaller than one makes the computation converge. The factor controls the importance of the future actions. That means the bigger the factor is the more future actions contribute to the sum. Therefore a higher discount factor causes more iterations when computing the optimal strategy with value iteration. With a small discount factor the future actions contribute much less to the sum and much less iterations are needed.  As is shown in \ref{table} the amount of iterations for the computation grows exponentially when increasing the discount factor. With a discount factor that is bigger or equal one the computation will not converge but it will result in an endless loop.
 
-graph with differnt iterations.
+\begin{table*}
+\centering
+\begin{tabular}{l*{6}{c}r}
+Discount factor             & 0.1 & 0.3 & 0.5 & 0.7  & 0.9 & 0.99& 0.999 \\
+\hline
+Amount of iterations        &12	& 21 & 33 &	57 &172& 1650&15051 \\
+Average reward
+\end{tabular}
+\caption{discount factor's influence on the amount of iterations to compute the optimal strategy }
+\label{table} 
+\end{table*}
+
+
 
 
 
