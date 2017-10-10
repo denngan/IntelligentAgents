@@ -141,11 +141,13 @@ public class ReactiveTemplate implements ReactiveBehavior {
 
 		currentState = new State(vehicle.getCurrentCity(), taskCity);
 
+		// get target city from strategy for current state
 		City optimalDestinationCity = getStrategy(currentState);
 		assert optimalDestinationCity != null;
+		// if city corresponds to target city of task, deliver task
 		if (optimalDestinationCity == taskCity) {
 			action = new Pickup(availableTask);
-		} else {
+		} else { // otherwise move to city
 			action = new Move(optimalDestinationCity);
 		}
 
