@@ -51,27 +51,50 @@ The {\tt act()} method implements the agent's behaviour. The agent looks up his 
 \subsection{Experiment 1: Discount factor}
 % the purpose of this experiment is to understand how the discount factor influences the result
 This experiment analyses the discount factor's influence on the computed strategy.  
-
 \subsubsection{Setting}
+
 % you describe how you perform the experiment (you also need to specify the configuration used for the experiment)
-The experiment will test the discount factor's influence on the strategy's computation and on the average reward the agent gets after some amount of actions by varying the discount factor. In order to get reliable results the topology and the task distribution will stay fixed during the experiment. 
+
+The experiment will test the discount factor's influence on the strategy's computation and on the average reward the agent gets after some amount of actions by varying the discount factor. In order to get reliable results the topology (France) and the task distribution (Random seed: 1507658040471) will stay fixed during the experiment. 
+
+
 
 \subsubsection{Observations}
+
 % you describe the experimental results and the conclusions you inferred from these results
+
 A discount factor smaller than one makes the computation converge. The factor controls the importance of the future actions. That means the bigger the factor is the more future actions contribute to the sum. Therefore a higher discount factor causes more iterations when computing the optimal strategy with value iteration. With a small discount factor the future actions contribute much less to the sum and much less iterations are needed.  As is shown in \ref{table} the amount of iterations for the computation grows exponentially when increasing the discount factor. With a discount factor that is bigger or equal one the computation will not converge but it will result in an endless loop.
 
-\begin{table*}
-\centering
-\begin{tabular}{l*{6}{c}r}
-Discount factor             & 0.1 & 0.3 & 0.5 & 0.7  & 0.9 & 0.99& 0.999 \\
-\hline
-Amount of iterations        &12	& 21 & 33 &	57 &172& 1650&15051 \\
-Average reward
-\end{tabular}
-\caption{discount factor's influence on the amount of iterations to compute the optimal strategy }
-\label{table} 
-\end{table*}
 
+The average profit is very similar for every discount factor as \ref{table} schows. The results seem to show that the average profit will always converge to the same value. The differnce is that higher discount factors are converging more smoothly than lower discount factors. 
+The discount factor \(0.1\) has a higher maximum average profit and a lower minumum average profit during ten thousand actions than 
+the other discount factors. So to be sure that the average profit converges smoothly but is not computetd with too many iterations we propose to take factor \(0.7\).
+
+\begin{table*}
+
+\centering
+
+\begin{tabular}{l*{6}{c}r}
+
+Discount factor             & 0.1 & 0.3 & 0.5 & 0.7  & 0.9 & 0.99& 0.999 \\
+
+\hline
+
+Amount of iterations        &12	& 21 & 33 &	57 &172& 1650&15051 \\
+
+Average profit at action 10000        &38685.9274&38632.5076&38632.5076&38638.7541&38638.754&38638.7541&38638.7541\\
+
+
+\end{tabular}
+
+
+
+
+\caption{discount factor's influence on the amount of iterations to compute the optimal strategy }
+
+\label{table} 
+
+\end{table*}
 
 
 
