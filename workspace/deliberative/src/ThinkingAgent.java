@@ -178,6 +178,11 @@ public class ThinkingAgent implements DeliberativeBehavior {
 				System.out.println("current state ist null");
 			}
 			// cases for actions (move or pickup)
+			TaskSet deliveries = previousState.getCarriedTasks().clone();
+			deliveries.removeAll(currentState.getCarriedTasks());
+			for (Task delivery: deliveries) {
+				list.add(new Action.Delivery(delivery));
+			}
 			if (currentState.getCurrentCity() == previousState.getCurrentCity()){
 				TaskSet newTask = previousState.getTasksToDo().clone();
 				newTask.removeAll(currentState.getTasksToDo());

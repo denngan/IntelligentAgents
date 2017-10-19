@@ -35,7 +35,7 @@ public class State {
 	}
 
 	public boolean isGoalState(){
-		return tasksToDo.isEmpty();
+		return tasksToDo.isEmpty() && carriedTasks.isEmpty();
 	}
 
 	public Topology.City getCurrentCity() {
