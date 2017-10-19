@@ -185,10 +185,13 @@ public class ThinkingAgent implements DeliberativeBehavior {
 
 				list.add(new Action.Pickup((Task) newTask.toArray()[0]));
 			} else {
+				List<Action> newList = new LinkedList<>();
 				for (City c :
-						previousState.getCurrentCity().pathTo(currentState.getCurrentCity())) {
-					list.add(new Action.Move(c));
+					previousState.getCurrentCity().pathTo(currentState.getCurrentCity())) {
+					newList.add(new Action.Move(c));
 				}
+				Collections.reverse(newList);
+				list.addAll(newList);
 
 			}
 			currentState = previousState;
@@ -200,7 +203,9 @@ public class ThinkingAgent implements DeliberativeBehavior {
 				list) {
 			plan.append(a);
 		}
+		System.out.println(plan);
 		return plan;
+
 	}
 
 	List<Action> getAvailableActions(State state) {
