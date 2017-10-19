@@ -7,7 +7,7 @@
 	<agent name="reactive-rla">
 		<set class-path="bin/"/>
 		<set class-name="ReactiveRLA"/>
-		<set discount-factor="0.0"/>
+		<set discount-factor="0.85"/>
 	</agent>
 	<agent name="greedy-bot">
 		<set class-path="bin/"/>
