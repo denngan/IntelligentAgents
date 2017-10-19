@@ -1,4 +1,8 @@
 public class Node<T> {
+	public Node(T nodeData) {
+		this.nodeData = nodeData;
+	}
+
 	private final T nodeData;
 
 	private double g;
@@ -21,10 +25,11 @@ public class Node<T> {
 	}
 
 	public double getH() {
+		if (h == 0) {
+			// compute heuristic
+			h = 1;
+		}
 		return h;
 	}
 
-	public void setH(double h) {
-		this.h = h;
-	}
 }

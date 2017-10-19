@@ -4,6 +4,26 @@ import logist.topology.Topology;
 public class State {
 	private Topology.City currentCity;
 
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+
+		State state = (State) o;
+
+		if (currentCity != null ? !currentCity.equals(state.currentCity) : state.currentCity != null) return false;
+		if (carriedTasks != null ? !carriedTasks.equals(state.carriedTasks) : state.carriedTasks != null) return false;
+		return tasksToDo != null ? tasksToDo.equals(state.tasksToDo) : state.tasksToDo == null;
+	}
+
+	@Override
+	public int hashCode() {
+		int result = currentCity != null ? currentCity.hashCode() : 0;
+		result = 31 * result + (carriedTasks != null ? carriedTasks.hashCode() : 0);
+		result = 31 * result + (tasksToDo != null ? tasksToDo.hashCode() : 0);
+		return result;
+	}
+
 	private TaskSet carriedTasks;
 
 	private TaskSet tasksToDo;

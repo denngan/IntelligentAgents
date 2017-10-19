@@ -70,17 +70,18 @@ public class ThinkingAgent implements DeliberativeBehavior {
 	 */
 	@Override
 	public Plan plan(Vehicle vehicle, TaskSet tasks) {
-		Plan plan;
+		Plan plan = new Plan(vehicle.getCurrentCity());
 
 		// Compute the plan with the selected algorithm.
+		State state = new State(vehicle.getCurrentCity(), vehicle.getCurrentTasks() , tasks);
 		switch (algorithm) {
 			case ASTAR:
 				// ...
-				plan = naivePlan(vehicle, tasks);
+				plan = searchAStar(state);
 				break;
 			case BFS:
 				// ...
-				plan = naivePlan(vehicle, tasks);
+				// plan = naivePlan(vehicle, tasks);
 				break;
 			default:
 				throw new AssertionError("Should not happen.");
@@ -105,16 +106,25 @@ public class ThinkingAgent implements DeliberativeBehavior {
 
 	}
 
+	public class NodeComparator implements Comparator<Node<State>> {
+		public int compare(Node<State> nodeFirst, Node<State> nodeSecond) {
+			if (nodeFirst.getF() > nodeSecond.getF()) return 1;
+			if (nodeSecond.getF() > nodeFirst.getF()) return -1;
+			return 0;
+		}
+	}
+
 	private Plan searchAStar(State startState) {
-		PriorityQueue<Node<State>> openList = new PriorityQueue<>();
+		PriorityQueue<Node<State>> openList = new PriorityQueue<>(11, new NodeComparator());
 		HashSet<State> closedList = new HashSet<>();
 		Map<State, State> parentState = new HashMap<>();
 		Map<State, Node<State>> stateToNode = new HashMap<>();
 
-		Node<State> startNode = new Node<State>();
+		Node<State> startNode = new Node<State>(startState);
 		openList.add(startNode);
 
 		do {
+			System.out.println("schleife");
 			Node<State> currentNode = openList.poll();
 
 			State currentState = currentNode.getNodeData();
@@ -139,13 +149,13 @@ public class ThinkingAgent implements DeliberativeBehavior {
 				}
 
 				successorNode.setG(tentativeG);
-				parentState.put(currentState, successorState);
+				parentState.put(successorState, currentState);
 				if (!openList.contains(successorNode)) {
 					openList.add(successorNode);
 				}
 			}
 		} while (!openList.isEmpty());
-
+		System.out.println("no path found");
 		return null;
 	}
 
@@ -154,11 +164,42 @@ public class ThinkingAgent implements DeliberativeBehavior {
 		State currentState = goalState;
 		Plan plan = new Plan(startState.getCurrentCity());
 
+		List<Action> list = new LinkedList<>();
+
 		while (currentState != startState) {
-			// todo
-			parentState.get(currentState);
+			State previousState = parentState.get(currentState);
+			if (parentState.containsKey(currentState)) {
+				System.out.println("current state enthalten");
+			}
+			if (previousState == null){
+				System.out.println("previous state ist null");
+			}
+			if (currentState == null){
+				System.out.println("current state ist null");
+			}
+			// cases for actions (move or pickup)
+			if (currentState.getCurrentCity() == previousState.getCurrentCity()){
+				TaskSet newTask = previousState.getTasksToDo().clone();
+				newTask.removeAll(currentState.getTasksToDo());
+				assert newTask.size() == 1;
+
+				list.add(new Action.Pickup((Task) newTask.toArray()[0]));
+			} else {
+				for (City c :
+						previousState.getCurrentCity().pathTo(currentState.getCurrentCity())) {
+					list.add(new Action.Move(c));
+				}
+
+			}
+			currentState = previousState;
 		}
 
+		Collections.reverse(list);
+
+		for (Action a :
+				list) {
+			plan.append(a);
+		}
 		return plan;
 	}
 
@@ -185,7 +226,14 @@ public class ThinkingAgent implements DeliberativeBehavior {
 		List<Node<State>> returnList = new LinkedList<>();
 
 		for (State successor : getSuccessorStates(node.getNodeData())) {
-			returnList.add(stateToNodeMap.get(successor));
+			Node<State> nodeTemp;
+			if (!stateToNodeMap.containsKey(successor)){
+				nodeTemp = new Node<>(successor);
+				stateToNodeMap.put(successor, nodeTemp);
+			} else {
+				nodeTemp = stateToNodeMap.get(successor);
+			}
+			returnList.add(nodeTemp);
 		}
 		return returnList;
 	}
@@ -201,7 +249,8 @@ public class ThinkingAgent implements DeliberativeBehavior {
 						newTaskSet.remove(task);
 					}
 				}
-				list.add(new State(city, newTaskSet, state.getTasksToDo()));
+				State stateTemp = new State(city, newTaskSet, state.getTasksToDo());
+				list.add(stateTemp);
 			}
 		}
 
