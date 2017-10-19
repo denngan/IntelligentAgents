@@ -124,7 +124,7 @@ public class ThinkingAgent implements DeliberativeBehavior {
 		openList.add(startNode);
 
 		do {
-			System.out.println("schleife");
+			//System.out.println("schleife");
 			Node<State> currentNode = openList.poll();
 
 			State currentState = currentNode.getNodeData();
@@ -168,7 +168,7 @@ public class ThinkingAgent implements DeliberativeBehavior {
 
 		while (currentState != startState) {
 			State previousState = parentState.get(currentState);
-			if (parentState.containsKey(currentState)) {
+			/*if (parentState.containsKey(currentState)) {
 				System.out.println("current state enthalten");
 			}
 			if (previousState == null){
@@ -176,12 +176,17 @@ public class ThinkingAgent implements DeliberativeBehavior {
 			}
 			if (currentState == null){
 				System.out.println("current state ist null");
-			}
+			}*/
 			// cases for actions (move or pickup)
+                        //System.out.println("tasks to clone:"+previousState.getCarriedTasks().clone());
+                        //System.out.println("taskts general" +previousState.getCarriedTasks());
 			TaskSet deliveries = previousState.getCarriedTasks().clone();
+                        //System.out.println("cloned: "+deliveries);
 			deliveries.removeAll(currentState.getCarriedTasks());
+                        //System.out.println(deliveries);
 			for (Task delivery: deliveries) {
 				list.add(new Action.Delivery(delivery));
+                                //System.out.println("added "+delivery);
 			}
 			if (currentState.getCurrentCity() == previousState.getCurrentCity()){
 				TaskSet newTask = previousState.getTasksToDo().clone();
@@ -268,7 +273,10 @@ public class ThinkingAgent implements DeliberativeBehavior {
 			if (task.pickupCity == state.getCurrentCity()) {
 				TaskSet newTasksToDo = state.getTasksToDo().clone();
 				newTasksToDo.remove(task);
-				list.add(new State(state.getCurrentCity(), state.getCarriedTasks(), newTasksToDo));
+                                TaskSet newCarriedTasks= state.getCarriedTasks().clone();
+                                newCarriedTasks.add(task);
+                                //System.out.println("carried tasks:"+newCarriedTasks);
+				list.add(new State(state.getCurrentCity(), newCarriedTasks, newTasksToDo));
 			}
 		}
 
