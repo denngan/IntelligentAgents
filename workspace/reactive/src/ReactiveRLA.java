@@ -1,4 +1,4 @@
-package template;
+//package template;
 
 import java.util.*;
 
@@ -15,7 +15,7 @@ import logist.task.TaskDistribution;
 import logist.topology.Topology;
 import logist.topology.Topology.City;
 
-public class ReactiveTemplate implements ReactiveBehavior {
+public class ReactiveRLA implements ReactiveBehavior {
 
 	private Random random;
 	private double pPickup;
@@ -141,11 +141,13 @@ public class ReactiveTemplate implements ReactiveBehavior {
 
 		currentState = new State(vehicle.getCurrentCity(), taskCity);
 
+		// get target city from strategy for current state
 		City optimalDestinationCity = getStrategy(currentState);
 		assert optimalDestinationCity != null;
+		// if city corresponds to target city of task, deliver task
 		if (optimalDestinationCity == taskCity) {
 			action = new Pickup(availableTask);
-		} else {
+		} else { // otherwise move to city
 			action = new Move(optimalDestinationCity);
 		}
 
