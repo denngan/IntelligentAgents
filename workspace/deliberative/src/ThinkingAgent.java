@@ -82,6 +82,8 @@ public class ThinkingAgent implements DeliberativeBehavior {
 			case BFS:
 				// ...
 				// plan = naivePlan(vehicle, tasks);
+                                state.setCapacity(vehicle.capacity());
+                                plan = BreadthFirst(state);
 				break;
 			default:
 				throw new AssertionError("Should not happen.");
@@ -115,10 +117,10 @@ public class ThinkingAgent implements DeliberativeBehavior {
 	}
 
 	private Plan searchAStar(State startState) {
-		PriorityQueue<Node<State>> openList = new PriorityQueue<>(11, new NodeComparator());
-		HashSet<State> closedList = new HashSet<>();
-		Map<State, State> parentState = new HashMap<>();
-		Map<State, Node<State>> stateToNode = new HashMap<>();
+		PriorityQueue<Node<State>> openList = new PriorityQueue<Node<State>>(11, new NodeComparator());
+		HashSet<State> closedList = new HashSet<State>();
+		Map<State, State> parentState = new HashMap();
+		Map<State, Node<State>> stateToNode = new HashMap();
 
 		Node<State> startNode = new Node<State>(startState);
 		openList.add(startNode);
@@ -164,7 +166,7 @@ public class ThinkingAgent implements DeliberativeBehavior {
 		State currentState = goalState;
 		Plan plan = new Plan(startState.getCurrentCity());
 
-		List<Action> list = new LinkedList<>();
+		List<Action> list = new LinkedList();
 
 		while (currentState != startState) {
 			State previousState = parentState.get(currentState);
@@ -195,7 +197,7 @@ public class ThinkingAgent implements DeliberativeBehavior {
 
 				list.add(new Action.Pickup((Task) newTask.toArray()[0]));
 			} else {
-				List<Action> newList = new LinkedList<>();
+				List<Action> newList = new LinkedList();
 				for (City c :
 					previousState.getCurrentCity().pathTo(currentState.getCurrentCity())) {
 					newList.add(new Action.Move(c));
@@ -219,7 +221,7 @@ public class ThinkingAgent implements DeliberativeBehavior {
 	}
 
 	List<Action> getAvailableActions(State state) {
-		List<Action> actions = new LinkedList<>();
+		List<Action> actions = new LinkedList();
 		City currentCity = state.getCurrentCity();
 
 		for(Task task : state.getTasksToDo()) {
@@ -238,12 +240,12 @@ public class ThinkingAgent implements DeliberativeBehavior {
 	}
 
 	List<Node<State>> getSuccessorNodes(Node<State> node, Map<State, Node<State>> stateToNodeMap) {
-		List<Node<State>> returnList = new LinkedList<>();
+		List<Node<State>> returnList = new LinkedList();
 
 		for (State successor : getSuccessorStates(node.getNodeData())) {
 			Node<State> nodeTemp;
 			if (!stateToNodeMap.containsKey(successor)){
-				nodeTemp = new Node<>(successor);
+				nodeTemp = new Node(successor);
 				stateToNodeMap.put(successor, nodeTemp);
 			} else {
 				nodeTemp = stateToNodeMap.get(successor);
@@ -254,7 +256,7 @@ public class ThinkingAgent implements DeliberativeBehavior {
 	}
 
 	List<State> getSuccessorStates(State state) {
-		List<State> list = new LinkedList<>();
+		List<State> list = new LinkedList();
 
 		for (City city: topology.cities()) {
 			if (city != state.getCurrentCity()) {
@@ -286,4 +288,290 @@ public class ThinkingAgent implements DeliberativeBehavior {
 	private double cost(State state1, State state2) {
 		return state1.getCurrentCity().distanceTo(state2.getCurrentCity());
 	}
+        
+       
+        private Plan BreadthFirst(State startState) {
+            HashSet<NodeB> firstLevel=new HashSet();
+            //
+            
+            
+            NodeB firstNode= new NodeB(startState,0,new LinkedList<City>());
+            firstLevel.add(firstNode);
+            
+            HashSet<NodeB> finals = BFS(firstLevel,new HashSet<NodeB>());
+            //got back all possible routes to endpoint
+            
+            NodeB goal= Collections.min(finals);
+            
+            return getPlanFromPath(startState,goal);
+
+            
+            
+        }
+        
+        private Plan getPlanFromPath(State startState, NodeB goal){
+            
+            Plan plan = new Plan(startState.getCurrentCity());
+            
+            TaskSet carried = startState.getCarriedTasks();
+            TaskSet ToDos = startState.getTasksToDo();
+            
+            
+            LinkedList<City> path = goal.getPath();
+            
+            System.out.println(path);
+            //System.out.println(ToDos);
+            for (int i=0; i<path.size();i++ ){
+                
+                plan = addAvailablePickUps(new State(path.get(i),carried,ToDos),plan);
+                
+                if (i==path.size()-1){
+                    //reached goal, do I need to travel back?
+                    
+                }
+                else{
+             
+                    for (City c : path.get(i).pathTo(path.get(i+1))) {
+					plan.appendMove(c);
+				}
+
+                }
+                
+                
+                
+            }
+            System.out.println(plan);
+            return plan;
+        }   
+             
+        Plan addAvailablePickUps(State state,Plan plan) {
+		City currentCity = state.getCurrentCity();
+
+                for(Task task : state.getCarriedTasks()) {
+			if (task.deliveryCity == currentCity) {
+				plan.appendDelivery(task);
+                                state.getCarriedTasks().remove(task);
+			}
+                }
+		for(Task task : state.getTasksToDo()) {
+			if (task.pickupCity == currentCity) {
+				plan.appendPickup(task);
+                                state.getTasksToDo().remove(task);
+                                state.getCarriedTasks().add(task);
+			}
+                }
+		// deliveries are automatic
+		return plan;
+	}
+        
+        
+        
+        
+        
+        private HashSet<NodeB> BFS( HashSet<NodeB> level, HashSet<NodeB> finals){ //goal state is clear--> all with empty tasks 
+            
+            HashSet<NodeB> allChildren = new HashSet();
+            
+            //get all child states, not in visited 
+            for(NodeB node:level){
+                //next states -> move either to city where there is atask to pick up or to city where there is a task to deliver 
+                //getSuccesorStates or nodes 
+                // iterate through successor states and remove visited ...there wont be visited as you only pick up or deliver tasks. moving is made on its own 
+                State state = node.getState();
+                HashSet<State> children = getSuccessorStatesB(state);
+                if (children!=null){
+                for (State child:children){
+                                        
+                    float cost=node.getCosts()+node.getState().getCurrentCity().distanceUnitsTo(child.getCurrentCity());
+                    LinkedList<City> path=(LinkedList<City>) node.getPath().clone();
+                    path.add(child.getCurrentCity());
+                    
+                    /*
+                    TaskSet delivered = node.getState().getCarriedTasks().clone();
+                    delivered.removeAll(child.getCarriedTasks());
+                    TaskSet pickups = node.getState().getTasksToDo();
+                    pickups.removeAll(child.getTasksToDo());
+                    */
+                    //add to plan 
+                    
+                    
+                    NodeB nextNode= new NodeB(child,cost,path);
+                    allChildren.add(nextNode);
+                    //added child node to the next level that needs to be checked
+                    
+                    if (child.isGoalState()){
+                        finals.add(nextNode);
+                        //delete child from children
+                        allChildren.remove(nextNode);
+                    }
+                    
+                 //System.out.println(path);   
+                }
+                    
+            }
+            }         
+            
+            if (allChildren.isEmpty()){
+            return finals;}
+            
+            else {return BFS(allChildren,finals);}
+                        
+                //create node mit liste der städte des paths (zeiger nach oberer stadt) und kosten des ganzen weges..
+                //visited can be new for each level->next HashSet Nodes
+                //when checking child add to visited/ nextas node  
+                        //check if visited set has already Node that node,
+                        // if yes check costs, chose the one with smaller costs
+                
+                //when done go through visited/next states. get all with empty tasks
+                // get the one with smallest cost --> end 
+                
+                //if no empty task keep on searching recursively 
+                
+            
+        
+            
+        }
+        
+        /*
+        return set of possible cities to got to
+        */
+        private HashSet<City> getSuccessorCities(State state){
+        
+            HashSet<City> successorCities=new HashSet();
+            TaskSet toDos=state.getTasksToDo().clone();
+            TaskSet carrying=state.getCarriedTasks().clone();
+            
+            for (Task task : state.getTasksToDo() ){
+                
+                
+                if(state.getCapacity()>task.weight){
+                if(!successorCities.add(task.pickupCity)){
+                    // can happen if two tasks maybe?return null; //could also return exception or just output
+                }
+            }
+            }
+            
+            for (Task task : state.getCarriedTasks()){
+                
+                
+                 if(!successorCities.add(task.deliveryCity)){
+                    //return null; //could also return null or just output
+                }
+               
+                
+            }
+            
+            return successorCities;
+        }  
+        
+        
+        //function to go through Successor city, for all cities make states:
+                //remove deliverable tasks form carried and add capacity
+                //add picked up task to carried, romeve for toDo and from capacity
+        
+       //!!only problem if two tasks to pick up from same city....
+        private HashSet<State> getSuccessorStatesB(State state){
+            HashSet<State> successorStates = new HashSet();
+            HashSet<City> cities= getSuccessorCities(state);
+            if (cities==null){ return null;}
+            else{
+            for( City city : cities){
+                State tempState=new State(city,state.getCarriedTasks().clone(),state.getTasksToDo().clone(),state.getCapacity());
+                
+                for (Task delivery : state.getCarriedTasks()){
+                    if (delivery.deliveryCity.equals(city)){
+                        tempState.getCarriedTasks().remove(delivery);
+                        tempState.setCapacity(tempState.getCapacity()+delivery.weight);
+                    }
+                }
+                
+                for (Task pickUp : state.getTasksToDo()){
+                    if (pickUp.pickupCity.equals(city)){
+                        
+                        if(pickUp.weight<tempState.getCapacity()){
+                            tempState.getCarriedTasks().add(pickUp);
+                            tempState.getTasksToDo().remove(pickUp);
+                            tempState.setCapacity(tempState.getCapacity()-pickUp.weight);
+                        }
+                        
+                    }
+                }
+                
+                successorStates.add(tempState);
+            }
+            return successorStates;
+            }
+        }
+        
+        
+        //__________________________________________________________________________
+        /*private HashSet<State> getSuccessorCities(State state,int capacity) {
+            
+            
+            
+            HashSet<State> successorStates = new HashSet<>();
+            HashSet<City> successorCities=new HashSet<>();
+            
+            
+            for (Task task : state.getTasksToDo() ){
+                
+                
+                TaskSet toDos=state.getTasksToDo().clone();
+                TaskSet carrying=state.getCarriedTasks().clone();
+                
+                
+                if(state.getCapacity()>task.weight){
+                if(!carrying.add(task) || !toDos.remove(task)){
+                    return null; //could also return exception or just output
+                }
+                
+                for (Task carryTask:carrying){
+                    if (task.deliveryCity)
+                }
+                
+                State tempState = new State(task.pickupCity,carrying,toDos,state.getCapacity()-task.weight);  
+                
+                
+               if(!successorStates.add(tempState) || successorCities.add(task.pickupCity)){
+                    return null;
+                } 
+                } 
+            }
+            
+            
+            for (Task task : state.getCarriedTasks()){
+                
+                TaskSet toDos=state.getTasksToDo().clone();
+                TaskSet carrying=state.getCarriedTasks().clone();
+                
+                
+                
+                 if(!carrying.remove(task)){
+                    return null; //could also return null or just output
+                }
+                State tempState = new State(task.pickupCity,carrying,toDos,state.getCapacity()+task.weight); 
+                if(!successorStates.add(tempState)){
+                    return null;
+                } 
+                
+            }
+            
+            return successorStates;
+        }  
+        
+        /*private NodeB lookForCity(Task task, HashSet<State> nextStates ){
+            
+            HashSet<State> state= new HashSet();
+            
+            for (State tempState : nextStates){
+                
+                if(tempState.getCurrentCity().equals(task.deliveryCity)){
+                    tempState.getCarriedTasks().remove(task)
+                }
+                
+            }
+            */
+            
+        //}
+        
 }
