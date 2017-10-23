@@ -9,6 +9,7 @@ import logist.task.TaskSet;
 import logist.topology.Topology;
 import logist.topology.Topology.City;
 
+import java.time.Duration;
 import java.util.*;
 
 public class ThinkingAgent implements DeliberativeBehavior {
@@ -24,6 +25,9 @@ public class ThinkingAgent implements DeliberativeBehavior {
 
 	/* the planning class */
 	private Algorithm algorithm;
+
+
+	private Set<City> releventCities = new HashSet<>();
 
 	/**
 	 * The setup method is called exactly once, before the simulation starts and
@@ -49,11 +53,13 @@ public class ThinkingAgent implements DeliberativeBehavior {
 		this.taskDistribution = distribution;
 
 		// initialize the planner
-		int capacity = agent.vehicles().get(0).capacity();
+		this.capacity = agent.vehicles().get(0).capacity();
 		String algorithmName = agent.readProperty("algorithm", String.class, "ASTAR");
 
 		// Throws IllegalArgumentException if algorithm is unknown
 		algorithm = Algorithm.valueOf(algorithmName.toUpperCase());
+
+
 	}
 
 	/**
@@ -74,6 +80,7 @@ public class ThinkingAgent implements DeliberativeBehavior {
 
 		// Compute the plan with the selected algorithm.
 		State state = new State(vehicle.getCurrentCity(), vehicle.getCurrentTasks() , tasks);
+		long startTime = System.nanoTime();
 		switch (algorithm) {
 			case ASTAR:
 				// ...
@@ -84,8 +91,9 @@ public class ThinkingAgent implements DeliberativeBehavior {
 				// plan = naivePlan(vehicle, tasks);
 				break;
 			default:
-				throw new AssertionError("Should not happen.");
+				throw new AssertionError("Algorithm not found.");
 		}
+		System.out.println("" + Duration.ofNanos(System.nanoTime() - startTime));
 		return plan;
 	}
 	/**
@@ -115,6 +123,18 @@ public class ThinkingAgent implements DeliberativeBehavior {
 	}
 
 	private Plan searchAStar(State startState) {
+		releventCities = new HashSet<>();
+		for (Task task :
+				startState.getTasksToDo()) {
+			releventCities.add(task.pickupCity);
+			releventCities.add(task.deliveryCity);
+		}
+		for (Task task :
+				startState.getCarriedTasks()) {
+			releventCities.add(task.pickupCity);
+			releventCities.add(task.deliveryCity);
+		}
+
 		PriorityQueue<Node<State>> openList = new PriorityQueue<>(11, new NodeComparator());
 		HashSet<State> closedList = new HashSet<>();
 		Map<State, State> parentState = new HashMap<>();
@@ -273,10 +293,11 @@ public class ThinkingAgent implements DeliberativeBehavior {
 			if (task.pickupCity == state.getCurrentCity()) {
 				TaskSet newTasksToDo = state.getTasksToDo().clone();
 				newTasksToDo.remove(task);
-                                TaskSet newCarriedTasks= state.getCarriedTasks().clone();
-                                newCarriedTasks.add(task);
-                                //System.out.println("carried tasks:"+newCarriedTasks);
-				list.add(new State(state.getCurrentCity(), newCarriedTasks, newTasksToDo));
+	            TaskSet newCarriedTasks= state.getCarriedTasks().clone();
+	            newCarriedTasks.add(task);
+	            if (newCarriedTasks.weightSum() <= capacity){
+		            list.add(new State(state.getCurrentCity(), newCarriedTasks, newTasksToDo));
+	            }
 			}
 		}
 
@@ -286,4 +307,6 @@ public class ThinkingAgent implements DeliberativeBehavior {
 	private double cost(State state1, State state2) {
 		return state1.getCurrentCity().distanceTo(state2.getCurrentCity());
 	}
+
+	// heuristics
 }
