@@ -28,3 +28,5 @@ hs_err_pid*
 rabbits/gankin-mock-in/\.idea/
 
 *.aux
+
+workspace/deliberative/\.idea/workspace\.xml

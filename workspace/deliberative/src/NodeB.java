@@ -16,7 +16,7 @@ import logist.topology.Topology.City;
 public class NodeB implements Comparable<NodeB> {
     
     private State state;
-    private float costs;
+    private double costs;
     private LinkedList<City> path;
 
     @Override
@@ -36,7 +36,7 @@ public class NodeB implements Comparable<NodeB> {
         }
     
     
-    public NodeB(State state, float costs, LinkedList<City> path){
+    public NodeB(State state, double costs, LinkedList<City> path){
         this.state=state;
         this.costs=costs;
         this.path=path;
@@ -60,7 +60,7 @@ public class NodeB implements Comparable<NodeB> {
     /**
      * @return the costs
      */
-    public float getCosts() {
+    public double getCosts() {
         return costs;
     }
 
