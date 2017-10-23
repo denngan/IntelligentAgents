@@ -13,7 +13,7 @@ import java.time.Duration;
 import java.util.*;
 
 public class ThinkingAgent implements DeliberativeBehavior {
-	enum Algorithm { BFS, ASTAR }
+	enum Algorithm {BFS, ASTAR}
 
 	/* Environment */
 	private Topology topology;
@@ -89,6 +89,8 @@ public class ThinkingAgent implements DeliberativeBehavior {
 			case BFS:
 				// ...
 				// plan = naivePlan(vehicle, tasks);
+				state.setCapacity(vehicle.capacity());
+				plan = BreadthFirst(state);
 				break;
 			default:
 				throw new AssertionError("Algorithm not found.");
@@ -96,6 +98,7 @@ public class ThinkingAgent implements DeliberativeBehavior {
 		System.out.println("" + Duration.ofNanos(System.nanoTime() - startTime));
 		return plan;
 	}
+
 	/**
 	 * In a multi-agent system the plan of an agent might get 'stuck' in which
 	 * case this method is called followed by a call to
@@ -148,7 +151,7 @@ public class ThinkingAgent implements DeliberativeBehavior {
 			Node<State> currentNode = openList.poll();
 
 			State currentState = currentNode.getNodeData();
-			if (currentState.isGoalState()){
+			if (currentState.isGoalState()) {
 				return computePath(parentState, currentState, startState);
 			}
 
@@ -188,27 +191,13 @@ public class ThinkingAgent implements DeliberativeBehavior {
 
 		while (currentState != startState) {
 			State previousState = parentState.get(currentState);
-			/*if (parentState.containsKey(currentState)) {
-				System.out.println("current state enthalten");
-			}
-			if (previousState == null){
-				System.out.println("previous state ist null");
-			}
-			if (currentState == null){
-				System.out.println("current state ist null");
-			}*/
-			// cases for actions (move or pickup)
-                        //System.out.println("tasks to clone:"+previousState.getCarriedTasks().clone());
-                        //System.out.println("taskts general" +previousState.getCarriedTasks());
 			TaskSet deliveries = previousState.getCarriedTasks().clone();
-                        //System.out.println("cloned: "+deliveries);
 			deliveries.removeAll(currentState.getCarriedTasks());
-                        //System.out.println(deliveries);
-			for (Task delivery: deliveries) {
+
+			for (Task delivery : deliveries) {
 				list.add(new Action.Delivery(delivery));
-                                //System.out.println("added "+delivery);
 			}
-			if (currentState.getCurrentCity() == previousState.getCurrentCity()){
+			if (currentState.getCurrentCity() == previousState.getCurrentCity()) {
 				TaskSet newTask = previousState.getTasksToDo().clone();
 				newTask.removeAll(currentState.getTasksToDo());
 				assert newTask.size() == 1;
@@ -217,7 +206,7 @@ public class ThinkingAgent implements DeliberativeBehavior {
 			} else {
 				List<Action> newList = new LinkedList<>();
 				for (City c :
-					previousState.getCurrentCity().pathTo(currentState.getCurrentCity())) {
+						previousState.getCurrentCity().pathTo(currentState.getCurrentCity())) {
 					newList.add(new Action.Move(c));
 				}
 				Collections.reverse(newList);
@@ -238,32 +227,13 @@ public class ThinkingAgent implements DeliberativeBehavior {
 
 	}
 
-	List<Action> getAvailableActions(State state) {
-		List<Action> actions = new LinkedList<>();
-		City currentCity = state.getCurrentCity();
-
-		for(Task task : state.getTasksToDo()) {
-			if (task.pickupCity == currentCity) {
-				actions.add(new Action.Pickup(task));
-			}
-		}
-		for (City city : this.topology) {
-			if (city != currentCity) {
-				actions.add(new Action.Move(city));
-			}
-		}
-
-		// deliveries are automatic
-		return actions;
-	}
-
 	List<Node<State>> getSuccessorNodes(Node<State> node, Map<State, Node<State>> stateToNodeMap) {
 		List<Node<State>> returnList = new LinkedList<>();
 
 		for (State successor : getSuccessorStates(node.getNodeData())) {
 			Node<State> nodeTemp;
-			if (!stateToNodeMap.containsKey(successor)){
-				nodeTemp = new Node<>(successor);
+			if (!stateToNodeMap.containsKey(successor)) {
+				nodeTemp = new Node<State>(successor);
 				stateToNodeMap.put(successor, nodeTemp);
 			} else {
 				nodeTemp = stateToNodeMap.get(successor);
@@ -276,7 +246,7 @@ public class ThinkingAgent implements DeliberativeBehavior {
 	List<State> getSuccessorStates(State state) {
 		List<State> list = new LinkedList<>();
 
-		for (City city: topology.cities()) {
+		for (City city : topology.cities()) {
 			if (city != state.getCurrentCity()) {
 				TaskSet newTaskSet = state.getCarriedTasks().clone();
 				for (Task task : state.getCarriedTasks()) {

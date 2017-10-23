@@ -27,12 +27,22 @@ public class State {
 	private TaskSet carriedTasks;
 
 	private TaskSet tasksToDo;
+        
+        private int capacity;
 
 	public State(Topology.City currentCity, TaskSet carriedTasks, TaskSet tasksToDo) {
 		this.currentCity = currentCity;
 		this.carriedTasks = carriedTasks;
 		this.tasksToDo = tasksToDo;
 	}
+        
+        public State(Topology.City currentCity, TaskSet carriedTasks, TaskSet tasksToDo,int capacity) {
+		this.currentCity = currentCity;
+		this.carriedTasks = carriedTasks;
+		this.tasksToDo = tasksToDo;
+                this.capacity= capacity;
+	}
+        
 
 	public boolean isGoalState(){
 		return tasksToDo.isEmpty() && carriedTasks.isEmpty();
@@ -61,4 +71,18 @@ public class State {
 	public void setTasksToDo(TaskSet tasksToDo) {
 		this.tasksToDo = tasksToDo;
 	}
+
+    /**
+     * @return the capacity
+     */
+    public int getCapacity() {
+        return capacity;
+    }
+
+    /**
+     * @param capacity the capacity to set
+     */
+    public void setCapacity(int capacity) {
+        this.capacity = capacity;
+    }
 }
