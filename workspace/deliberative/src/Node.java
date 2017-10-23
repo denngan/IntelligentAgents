@@ -27,10 +27,6 @@ public class Node<T> {
 	}
 
 	public double getH() {
-//		if (h == 0) {
-//			// compute heuristic
-//			h = 1;
-//		}
 		return h;
 	}
 

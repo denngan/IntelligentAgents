@@ -83,16 +83,7 @@ public class ThinkingAgent implements DeliberativeBehavior {
 		State state = new State(vehicle.getCurrentCity(), vehicle.getCurrentTasks(), tasks);
 		long startTime = System.nanoTime();
 
-		relevantCities = new HashSet<>();
-		for (Task task :
-				state.getTasksToDo()) {
-			relevantCities.add(task.pickupCity);
-			relevantCities.add(task.deliveryCity);
-		}
-		for (Task task :
-				state.getCarriedTasks()) {
-			relevantCities.add(task.deliveryCity);
-		}
+		relevantCities = computeRelevantCities(state);
 
 		switch (algorithm) {
 			case ASTAR:
@@ -110,6 +101,21 @@ public class ThinkingAgent implements DeliberativeBehavior {
 		}
 		System.out.println("" + Duration.ofNanos(System.nanoTime() - startTime));
 		return plan;
+	}
+
+	private Set<City> computeRelevantCities(State state) {
+		Set<City> cities = new HashSet<>();
+		for (Task task :
+				state.getTasksToDo()) {
+			cities.add(task.pickupCity);
+			cities.add(task.deliveryCity);
+		}
+		for (Task task :
+				state.getCarriedTasks()) {
+			cities.add(task.deliveryCity);
+		}
+
+		return cities;
 	}
 
 	/**
@@ -521,7 +527,11 @@ public class ThinkingAgent implements DeliberativeBehavior {
 	}
 
 	private double mst(State state) {
-		return new Graph(topology).minimalSpanningTree();
+		return new Graph(topology, computeRelevantCities(state)).minimalSpanningTree();
+	}
+
+	private double constant() {
+		return 1;
 	}
 
 }

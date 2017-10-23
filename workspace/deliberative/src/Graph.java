@@ -5,13 +5,15 @@ import java.util.*;
 
 public class Graph {
 	private Set<Edge> edges = new HashSet<>();
-	private List<City> cities;
+	private Set<City> cities;
 
-	public Graph(Topology topology) {
-		cities = topology.cities();
-		for (City city : topology.cities()) {
+	public Graph(Topology topology, Set<City> cities) {
+		this.cities = cities;
+		for (City city : cities) {
 			for (City neighbor : city.neighbors()) {
-				edges.add(new Edge(city, neighbor, city.distanceTo(neighbor)));
+				if (cities.contains(neighbor)) {
+					edges.add(new Edge(city, neighbor, city.distanceTo(neighbor)));
+				}
 			}
 		}
 	}
