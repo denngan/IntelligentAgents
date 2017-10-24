@@ -2,13 +2,13 @@
 
 \usepackage{amsmath}
 \usepackage{textcomp}
-
+\usepackage{hyperref}
 % Add other packages here %
 
 
 % Put your group number and names in the author field %
-\title{\bf Excercise 3\\ Implementing a deliberative Agent}
-\author{Group \textnumero : Student 1, Student 2}
+\title{\bf Exercise 3\\ Implementing a deliberative Agent}
+\author{Group \textnumero 29: Daniel A. Mock, Dennis Gankin}
 
 
 % N.B.: The report should not be longer than 3 pages %
@@ -18,27 +18,68 @@
 \maketitle
 
 \section{Model Description}
+A state contains the current city of the vehicle of an agent, the carried tasks of an agent and the tasks which are yet to be picked up by the agent.
 
-\subsection{Intermediate States}
-% Describe the state representation %
+%\subsection{Intermediate States}
+%
 
 \subsection{Goal State}
-% Describe the goal state %
+A state is a goal state if and only if there are no carried tasks and there are no tasks left to be picked up.
+This is a necessary and sufficient condition for every task being picked up and delivered.
+A state is a intermediate state if and only if it is not a goal state.
 
 \subsection{Actions}
 % Describe the possible actions/transitions in your model %
-
+The actions are the three actions given in the logist platform: Either move to a given city, pickup a tasks in the current city or deliver a task in the current city.
+Note that we can move to every city, not only the neighboring ones.
+The idea behind this is that a sequence of consequent move actions can be fused into one metamove, resulting in a shorter path to a goal state while searching.
 
 \section{Implementation}
 
 \subsection{BFS}
 % Details of the BFS implementation %
+The BFS is implemented with a queue start contains the nodes that have to be visited and a set of already visited states.
+The implementation is as usual, the only interesting thing is how to compute the successor states.
 
 \subsection{A*}
 % Details of the A* implementation %
+This implementation follows the pseudo code found on the Wikipedia page.
+We use a \texttt{Node} to wrap the state and its $f$, $g$ and $h$ values.
+
+
+
+\subsection{Common stuff}
+Instead of considering move actions to every neighbor city, we consider moves to \emph{relevant cities}:
+A city is relevant if 
+\begin{itemize}
+	\item it is the current city of the vehicle
+	\item it is the origin or destination of a task yet to be picked up
+	\item it is the destination of a carried task.
+\end{itemize}
+
+Finding a goal state is not enough, we have to construct a path from the start state to the goal state.
+This is done by remembering from which state we got another state.
+This is implemented by a hash map mapping a state to its parent state in the search.
+In BFS the parent state corresponds to the first state, that added the state to the search space while expanding.
+In A* this parent state may be changed, when a shorter path to this state is found.
+
+Afterwards, we traverse this map from the goal state to the start state and add the corresponding actions to the plan.
 
 \subsection{Heuristic Function}
 % Details of the heuristic functions: main idea, optimality, admissibility %
+The MST-heuristic:
+For a given state, we regard the subgraph of the given network that is induced by the relevant cities of the state.
+We compute the minimal spanning tree of this graph.
+Since this MST cannot have more weight than a path containing every city of the graph, this heuristic is admissable.
+
+Let $h(s)$ denote the value of state $s$ under the MST heuristic and $d(s,t)$ the cost (travelling distance) to get from state $s$ to state $t$.
+To show that A* is optimal, the heuristic has to be monotonic, i.e., we have to show that this inequation holds:
+\[ h(s) \leq d(s,t) +h(t) .\]
+
+Since the induced subgraph only changes if the agent delivered or picked up a task and moves to another city in this subgraph, it suffices to show that $MST(G) \leq MST(G - e) + \mathrm{weight}(e)$, where $G$ is a graph, $e$ is an edge from $G$.
+Since the set of spanning trees of $G$ is independent, it forms a matroid with the edges as base set and the statement follows from the set exchange property.
+
+We implemented the MST heuristic by using Kruskal's algorithm and the Union-Find data structure to store the connected components.
 
 
 \section{Results}

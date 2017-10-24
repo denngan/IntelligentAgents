@@ -30,3 +30,5 @@ rabbits/gankin-mock-in/\.idea/
 *.aux
 
 workspace/deliberative/\.idea/workspace\.xml
+
+workspace/deliberative/history\.xml
