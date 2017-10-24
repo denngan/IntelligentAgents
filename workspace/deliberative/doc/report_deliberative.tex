@@ -88,11 +88,95 @@ We implemented the MST heuristic by using Kruskal's algorithm and the Union-Find
 % Compare the two algorithms in terms of: optimality, efficiency, limitations %
 % Report the number of tasks for which you can build a plan in less than one minute %
 
+
+
+
 \subsubsection{Setting}
 % Describe the settings of your experiment: topology, task configuration, etc. %
-
+\begin{description}
+	\item [Optimality] As A* is using a well chosen heuristic the result will be optimal. That means that the agent minimizes the travelled distance. We will compare the BFS computation to A* in terms of the achieved reward per kilometer. In order to get comparable results we will use the same seeds in the topologies switzerland (seed: 1508874632341) and england (seed:1508874167686) and six tasks. 
+	\item[Efficiency] We test the efficiency by measuring the time it takes to compute the plan for a-star and breadth-first-search. In order to do so we use the same seeds but increase the amount of tasks. The seed used is 1508828337106. The used topology is Switzerland.
+For the topologies england and switzerland we also compare the number of tasks for which the algorithms can build a plan in less than a minute as an average over different seeds.
+	\item[limitations] We want to check limitations by setting the task weight very high or cpacity very low in the topology switzerland with 6 tasks.
+\end{description}
 \subsubsection{Observations}
 % Describe the experimental results and the conclusions you inferred from these results %
+\begin{description}
+	\item[Optimality] Table  \ref{award} shows that A* gets a higher award per kilometer than BFS. That shows that BFS computation is not optimal. That makes sense if you consider that BFS picks the first plan that was found which is very probably not the optimal one.
+The difference between the rward is bigger in england. That is probably because there are many leafs and not many circles in the topology. That leads to a lot of going back and forth and thus higher costs if the topology is not optimal. In switzerland there are a lot of circles and thus different ways to get to cities. So an non-optimal route does not cost much more.	
+
+
+\begin{table*}
+
+\centering
+
+\begin{tabular}{l*{3}{c}r}
+
+topology          & switzerland & england  \\
+
+\hline
+
+award per km BFS &150 	&125\\
+
+award per km A*   &185&210\\
+
+
+\end{tabular}
+
+\caption{Award per kilometer for BFS and A*}
+
+\label{award} 
+\end{table*}
+
+
+
+
+
+
+
+\item[Efficiency]  Table \ref{table} shows the run time of creating the plan with BFS and A* in the topology switzerland. 
+
+The runtime for both algorithms seems to clibm exponentially. The efficiency correlates with the amount of states and with one added task the amount of states incerases factorially as all the state permutations are checked
+BFS computes the plan faster than A*. That is because A* first computes the heuristic and searches for the optimal way while BFS takes the first plan that was found. 
+
+In the topologies switzerland and england BFS runs under a minute (52s and 27s) for 12 tasks but much longer than a minute for 13. A* on the other hand runs under a minute for 10 tasks in switzerland (16s) and over two minutes for 11 tasks. In england it runs under a minute for 11 tasks too (44s) but way over a minute for 12 tasks. That shwois BFS performs better in general. But the less circles there are in a topology the easier it is to compute the spanning tree as a heuristic and thus the computation of A* is faster for those topologies.
+
+
+\begin{table*}
+
+\centering
+
+\begin{tabular}{l*{5}{c}r}
+
+Amount of tasks         & 9  & 10 & 11& 12&13 \\
+
+\hline
+
+Runtime BFS  
+ &	0.740274632S 
+&2.513198091S
+& 12.696077091S
+&52.209577345S&timeout\\
+
+Runtime A*   
+&8.405499865S&1M1.407484042S&timeout&timeout&timeout\\
+
+
+\end{tabular}
+
+
+
+
+
+\caption{Runtime in seconds for BFS and A*}
+
+\label{table} 
+
+\end{table*}
+
+\item[Limitations] When the capacity is equal to a task's weight then the agent can only puick up and deliver one task at a time. Thus the travelling costs increase. That leads to approximately 105 award per km for A* and 95 award per km with BFS. For A* the reward almost halfed and BFS lost approximately one third of the initial reward shwon in table  \ref{table}. That underlines that the plan is much more efficient than taking each task by itself. A capacity lower than the task weight is not recommended it will throw an exception as no plan can be computed.
+
+\end{description}
 
 
 \subsection{Experiment 2: Multi-agent Experiments}
@@ -100,8 +184,20 @@ We implemented the MST heuristic by using Kruskal's algorithm and the Union-Find
 
 \subsubsection{Setting}
 % Describe the settings of your experiment: topology, task configuration, etc. %
+In this experiment we want to observe how two and three agents behave in the environment at the same time.
+
+
+We will vary the plan computation and the amount of tasks an see how this changes the expected reward. We will start with two agents in Switzerland starting from Lausanne and Zürich and increase the available tasks.
+
 
 \subsubsection{Observations}
 % Describe the experimental results and the conclusions you inferred from these results %
+With two agents in the environment both agents each have less reward per km than a single one in the environment. While six, seven and eight tasks led to three new computations of the plan during the run 9 tasks only led to two collisions. Thus it seems with more tasks the collision rate seems to decrease very slowly. There is always a difference of approximately 30 reward points between the two agents. That makes sense because each collision interferes with the optimal way for the agent so he will have to recompute and the new route will bring less reward and cost more, because he can take one task less. 
+
+With two agents using BFS their rewards per km decrease again as they do not chose the optimal path in the first place. The gap between the two rewards is much bigger than betweet two A* agents and does not get smaller with more tasks. That is because with A* the tasks are distributed more evenly between the two agents. When there are nine tasks one agent picks up four and one five tasks. With BFS it is two tasks for one agent and seven tasks for the other one. 
+
+We add a third agent starting from Bern. With A* the reward per km is again lower than for the envoirent with two or with one agent. Still the average of the reward per km is with approximately 145 for nine tasks higher than with BFS (110).
+
+
 
 \end{document}
