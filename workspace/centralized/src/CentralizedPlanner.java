@@ -4,8 +4,10 @@
  * and open the template in the editor.
 */
 
-
+import java.util.Random;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -89,14 +91,14 @@ public class CentralizedPlanner implements CentralizedBehavior {
         return plans;
     }
 
-    private Map<Vehicle,List<PublicAction>> SLS(TaskSet tasks) {
+    private Map<Vehicle,List<PublicAction>> SLS(TaskSet tasks, double p) {
         int stepsTotal=0;
         int stepsWithoutImprovement=0;        
         Map<Vehicle,List<PublicAction>> A = selectInitialSolution(tasks);
             do {
                Map<Vehicle,List<PublicAction>> Aold = A;
                Set<Map<Vehicle,List<PublicAction>>> N = chooseNeighbours(Aold, tasks );
-               A = localChoice(N);
+               A = localChoice(N,p,Aold);
                stepsTotal++; 
                if (costFunction(A)==costFunction(Aold)){
                    stepsWithoutImprovement++;
@@ -111,16 +113,86 @@ public class CentralizedPlanner implements CentralizedBehavior {
     
     
     private Map<Vehicle,List<PublicAction>> selectInitialSolution(TaskSet tasks){
-    
+        int numVehicles= vehicles.size();
         
+        Map<Vehicle,List<PublicAction>> A = new HashMap<>();
+        
+        //create Map with empty lists 
+        for (Vehicle vehicle : vehicles ){
+            A.put(vehicle, new LinkedList());
+        }
+        
+        //add each task randomly to car
+        for (Task task:tasks){
+            
+            //chose car randomly 
+            Random random = new Random();
+            int chosenVehicle=random.nextInt(numVehicles + 1);
+            
+            //check that task fits
+            //could be infinite loop! do differnetly (for loop for limited tries)
+            while (task.weight>vehicles.get(chosenVehicle).capacity()){
+                random = new Random();
+                chosenVehicle=random.nextInt(numVehicles + 1);
+            }
+            
+            //add pickup action and delivery action to vehicle's list
+            A.get(vehicles.get(chosenVehicle)).add(new PublicAction(task,PublicAction.ActionType.PICKUP));
+            A.get(vehicles.get(chosenVehicle)).add(new PublicAction(task,PublicAction.ActionType.DELIVERY));
+            
+            
+        }
+        return A;
     }
 
     private Set<Map<Vehicle, List<PublicAction>>> chooseNeighbours(Map<Vehicle, List<PublicAction>> Aold, TaskSet tasks) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    private Map<Vehicle, List<PublicAction>> localChoice(Set<Map<Vehicle, List<PublicAction>>> N) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    private Map<Vehicle, List<PublicAction>> localChoice(Set<Map<Vehicle, List<PublicAction>>> N, double p ,Map<Vehicle, List<PublicAction>> oldA) {
+       
+        List<Map<Vehicle, List<PublicAction>>> bestAs =new LinkedList<>();
+        double bestCost;
+        
+        //get all the best results
+        for( Map<Vehicle, List<PublicAction>> newA : N ){
+            if (bestAs==null){
+                bestAs.add(newA);
+                bestCost=costFunction(newA);
+            }
+            else{
+                if (costFunction(newA)<bestCost){
+                    bestAs =new LinkedList<>();
+                    bestAs.add(newA);
+                    bestCost=costFunction(newA);
+                }
+                else if (costFunction(newA)==bestCost){
+                    bestAs.add(newA);
+                }
+                 
+            }
+            
+        }
+        
+        //chose randomly from list
+        Random random = new Random();
+        Map<Vehicle, List<PublicAction>> randomBestA = bestAs.get(random.nextInt(bestAs.size()));
+        
+        if(costFunction(oldA)>bestCost){
+            return randomBestA;
+        }else if (costFunction(oldA)<bestCost){
+            //that should never happen
+            return oldA;
+        }else {
+            if (Math.random()>p){
+                return oldA;  //probability 1-p
+            }
+            else {
+                 return randomBestA; //probability p
+            }
+            
+            
+        }
     }
 
     private double costFunction(Map<Vehicle, List<PublicAction>> A) {
