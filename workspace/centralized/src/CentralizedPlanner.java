@@ -79,6 +79,9 @@ public class CentralizedPlanner implements CentralizedBehavior {
 		do {
 			Assignment oldAssignment = assignment; // A_old
 			Set<Assignment> neighbours = chooseNeighbours(oldAssignment, tasks);
+			for (int i = 0; i < Math.sqrt(stepsWithoutImprovement); i++) {
+				neighbours.add(selectInitialSolution(tasks));
+			}
 			assignment = localChoice(neighbours, oldAssignment);
 			stepsTotal++;
 			if (costFunction(assignment) == costFunction(oldAssignment)) {

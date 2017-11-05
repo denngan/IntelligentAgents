@@ -1,0 +1,115 @@
+\documentclass[11pt]{article}
+
+\usepackage{amsmath}
+\usepackage{textcomp}
+
+% Add other packages here %
+
+
+% Put your group number and names in the author field %
+\title{\bf Excercise 4\\ Implementing a centralized agent}
+\author{Group \textnumero : Student 1, Student 2}
+
+
+% N.B.: The report should not be longer than 3 pages %
+
+
+\begin{document}
+\maketitle
+
+\section{Solution Representation}
+
+\subsection{Variables}
+The idea is to use the provided CSP and decompose a task into a pickup action and delivery action:
+
+nextAction: 
+an array of $N_A +N_V$ variables. 
+The array contains one variable	for every existing action, and one variable for every existing vehicle:
+$nextAction = [nextAction(a1), . . . , nextAction(a_{N_A}
+), nextAction(v1), . . ., nextAction(v_{N_V}
+)]$
+One variable from the nextAction array can take as a value another action,
+or the value NULL:
+$nextAction(x) \in A \cup \{NULL\}$, where for every task, there is a pickup and delivery action:
+$A = \{p(t), a(t) \colon t \text{ is a tast}\}$.
+with the following semantics:
+\begin{itemize}
+	\item  if $nextAction(a_i) = a_j$ it means that some vehicle will do action $a_j$ immediately after $a_i$;
+	\item  $if nextAction(v_k) = a_j$ it means that the vehicle $v_k$ does action $a_j$ (pickup) at first ;
+	\item if $nextAction(a_i) = NULL$, the vehicle that did action $a_i$ (delivery) has nothing left to do;
+	\item if $nextAction(vk) = NULL$, the vehicle vk does not have to any action.
+\end{itemize}
+
+One variable from the vehicle array can take as a value the code of the
+vehicle that delivers the corresponding task:
+$$ vehicle(a) \in V$$
+
+\subsubsection{Implementation}
+We implemented this a bit differently:
+The datastructure is a map of lists of action.
+Every list corresponds to the actions one vehicle has to perform.
+The first element of the list of vehicle $v$ is $nextAction(v)$.
+The successor of an action in the list is the result of nextAction.
+
+\subsection{Constraints}
+% Describe the constraints in your solution representation %
+\begin{enumerate}
+	\item $nextAction(a) \neq a$: the action performed after some action $a$ cannot be the same
+	action;
+	\item All tasks have to be delivered:
+	the set of actions in $nextAction$ has to equal $A$ plus $N_V$ times NULL.
+	\item CAPACITY TODO	
+	\item $nextAction(v) = a \implies vehicle(a) = v$
+	\item $nextAction(a) = b \impliedby vehicle(a) = vehicle(b)$
+\end{enumerate}
+\subsection{Objective function}
+% Describe the function that you optimize %
+\begin{itemize}
+	\item $dist(a,b)$ is the shortest distance between the cities corresponding to the task of $a$ and $b$, i.e.
+	if $a$ is a pickup, then the corresponding city is the pickup location of the task of $a$, otherwise the delivery city.
+	\item $dist(a, NULL) = 0$, the vehicle stops after the last action.
+	\item $dist(v, a)$  is the shortest distance between the home location of the vehicle
+	$v$ and the city of $a$;
+	\item $dist(v, NULL) = 0$;
+	\item $cost(v)$ is the cost per kilometer of vehicle $v$.
+\end{itemize}
+The total cost of the company is defined as:
+\begin{align*}
+	C = \sum_{a \in A} dist(a, nextAction(a)) \cdot cost(vehicle(a)) + \sum_{v \in V} dist(v, nextAction(v)) \cdot cost(v)
+\end{align*}
+\section{Stochastic optimization}
+
+\subsection{Initial solution}
+% Describe how you generate the initial solution %
+
+\subsection{Generating neighbours}
+% Describe how you generate neighbors %
+
+\subsection{Stochastic optimization algorithm}
+% Describe your stochastic optimization algorithm %
+
+
+\section{Results}
+
+\subsection{Experiment 1: Model parameters}
+% if your model has parameters, perform an experiment and analyze the results for different parameter values %
+
+\subsubsection{Setting}
+% Describe the settings of your experiment: topology, task configuration, number of tasks, number of vehicles, etc. %
+% and the parameters you are analyzing %
+
+\subsubsection{Observations}
+% Describe the experimental results and the conclusions you inferred from these results %
+
+\subsection{Experiment 2: Different configurations}
+% Run simulations for different configurations of the environment (i.e. different tasks and number of vehicles) %
+
+\subsubsection{Setting}
+% Describe the settings of your experiment: topology, task configuration, number of tasks, number of vehicles, etc. %
+
+\subsubsection{Observations}
+% Describe the experimental results and the conclusions you inferred from these results %
+% Reflect on the fairness of the optimal plans. Observe that optimality requires some vehicles to do more work than others. %
+% How does the complexity of your algorithm depend on the number of vehicles and various sizes of the task set? %
+
+\end{document}
