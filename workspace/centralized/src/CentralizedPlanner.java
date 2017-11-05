@@ -22,8 +22,8 @@ public class CentralizedPlanner implements CentralizedBehavior {
 	private Agent agent;
 	private long timeout_setup;
 	private long timeout_plan;
-	private int MAX_STEPS_WITHOUT_IMPROVEMENT = Integer.MAX_VALUE;
-	private int MAX_STEPS = 10;
+	private int MAX_STEPS_WITHOUT_IMPROVEMENT = 50;
+	private int MAX_STEPS = 10000;
 	private double CHANGEMENT_PROBABILITY = 0.4;
 
 
@@ -55,15 +55,14 @@ public class CentralizedPlanner implements CentralizedBehavior {
 	public List<Plan> plan(List<Vehicle> vehicles, TaskSet tasks) {
 		long time_start = System.currentTimeMillis();
 
-		Assignment planSLS = SLS(tasks);
+		Assignment assignment = SLS(tasks);
 
-		List<Plan> plans = new ArrayList<Plan>();
-		plans = generatePlan(planSLS);
+		List<Plan> plans = generatePlan(assignment);
 
 		long time_end = System.currentTimeMillis();
 		long duration = time_end - time_start;
 		System.out.println("The plan was generated in " + duration + " milliseconds.");
-
+		System.out.println("The cost of the plan is " + costFunction(assignment) +".");
 		return plans;
 	}
 
@@ -144,7 +143,8 @@ public class CentralizedPlanner implements CentralizedBehavior {
 				}
 			}
 		});
-		System.out.println("vehicle changed");
+		System.out.println("Number of neighbours: " + neighbours.size());
+
 		// Applying the Changing task order operator :
 		// compute the number of tasks of the vehicle
 		VehicleAssignment vehicleAssignment = oldAssignment.get(chosenVehicle);
@@ -157,10 +157,12 @@ public class CentralizedPlanner implements CentralizedBehavior {
 			}
 		}
 
+		System.out.println("Number of neighbours: " + neighbours.size());
 		return neighbours;
 	}
 
 	/**
+	 * Permutes
 	 * @param oldAssignment
 	 * @param vehicle
 	 * @param indexTask
@@ -173,12 +175,13 @@ public class CentralizedPlanner implements CentralizedBehavior {
 		Assignment assignment = new Assignment(oldAssignment);
 		VehicleAssignment vehicleAssignment = assignment.get(vehicle);
 
-		//assignment.get(vehicle).removeIf(a -> a.task == toMove);
 		PublicAction pickup = oldAssignment.get(vehicle).get(indexTask);
 		Task toMove = pickup.task;
 		PublicAction delivery = null;
-		for (int i = indexTask +1; i < oldAssignment.get(vehicle).size(); i++) {
-			PublicAction current = oldAssignment.get(vehicle).get(i);
+		assert pickup.task != null;
+
+		for (int i = indexTask +1; i < vehicleAssignment.size(); i++) {
+			PublicAction current = vehicleAssignment.get(i);
 			if (current.task == toMove) {
 				assert current.actionType == PublicAction.ActionType.DELIVERY;
 				delivery = current;
@@ -187,21 +190,23 @@ public class CentralizedPlanner implements CentralizedBehavior {
 				break;
 			}
 		}
+		assert delivery != null;
 
 		// precompute the space left after each action
 		int weight = toMove.weight;
-		int[] spaceLeft = new int[vehicleAssignment.size() + 1];
+		int[] spaceLeft = new int[vehicleAssignment.size() + 2];
 		spaceLeft[0] = vehicle.capacity();
-		for (int j = 1; j < spaceLeft.length; j++) {
-			if (vehicleAssignment.get(j-1).actionType == PublicAction.ActionType.PICKUP) {
-				spaceLeft[j] = spaceLeft[j-1] - vehicleAssignment.get(j-1).task.weight;
+		for (int j = 0; j < vehicleAssignment.size(); j++) {
+			if (vehicleAssignment.get(j).actionType == PublicAction.ActionType.PICKUP) {
+				spaceLeft[j+1] = spaceLeft[j] - vehicleAssignment.get(j).task.weight;
 			} else { // delivery
-				spaceLeft[j] = spaceLeft[j-1] + vehicleAssignment.get(j-1).task.weight;
+				spaceLeft[j+1] = spaceLeft[j] + vehicleAssignment.get(j).task.weight;
 			}
 		}
+		spaceLeft[spaceLeft.length-1] = weight;
 
 		int stop = 0;
-		for (int i = 0; i < vehicleAssignment.size() + 1; i++) {
+		for (int i = 0; i < spaceLeft.length - 1; i++) {
 			if (spaceLeft[i] < weight) {
 				for (int k = stop; k < i; k++) {
 					for (int l = k; l <= i; l++) {
@@ -214,7 +219,14 @@ public class CentralizedPlanner implements CentralizedBehavior {
 				stop = i+1;
 			}
 		}
-
+		for (int k = stop; k < spaceLeft.length-1; k++) {
+			for (int l = k; l < spaceLeft.length-1; l++) {
+				Assignment temp = new Assignment(assignment);
+				temp.get(vehicle).add(k, pickup);
+				temp.get(vehicle).add(l+1, delivery); // index + 1 since the pickup shifts the order
+				neighbours.add(temp);
+			}
+		}
 		return neighbours;
 	}
 
@@ -229,7 +241,6 @@ public class CentralizedPlanner implements CentralizedBehavior {
 	 */
 	private Assignment changingVehicle(Assignment oldAssignment, Vehicle vehicleFrom, Vehicle vehicleTo) {
 		Assignment assignment = new Assignment(oldAssignment);
-		VehicleAssignment vehicleAssignment = assignment.get(vehicleFrom);
 
 		//assignment.get(vehicle).removeIf(a -> a.task == toMove);
 		PublicAction pickup = oldAssignment.get(vehicleFrom).get(0);
@@ -240,13 +251,14 @@ public class CentralizedPlanner implements CentralizedBehavior {
 			if (current.task == toMove) {
 				delivery = current;
 				assignment.get(vehicleFrom).remove(i);
-				assignment.get(vehicleFrom).remove(vehicleFrom);
+				assignment.get(vehicleFrom).remove(0);
 				break;
 			}
 		}
+		assert delivery != null;
 		// add infront of vehicleTo
-		assignment.get(vehicleTo).add(0, new PublicAction(toMove, PublicAction.ActionType.PICKUP));
-		assignment.get(vehicleTo).add(1, new PublicAction(toMove, PublicAction.ActionType.DELIVERY));
+		assignment.get(vehicleTo).add(0, pickup);
+		assignment.get(vehicleTo).add(1, delivery);
 		return assignment;
 	}
 
@@ -257,8 +269,9 @@ public class CentralizedPlanner implements CentralizedBehavior {
 
 		//get all the best results
 		for (Assignment newA : neighbors) {
+			System.out.println(costFunction(newA));
 			if (costFunction(newA) < bestCost) {
-				bestAssignments = new LinkedList<>();
+				bestAssignments.clear();
 				bestAssignments.add(newA);
 				bestCost = costFunction(newA);
 			} else if (costFunction(newA) == bestCost) {
@@ -273,8 +286,7 @@ public class CentralizedPlanner implements CentralizedBehavior {
 		if (costFunction(oldA) > bestCost) {
 			return randomBestA;
 		} else if (costFunction(oldA) < bestCost) {
-			//that should never happen
-			assert false;
+			System.out.println("chose old assignment");
 			return oldA;
 		} else {
 			if (Math.random() > CHANGEMENT_PROBABILITY) {
@@ -302,7 +314,6 @@ public class CentralizedPlanner implements CentralizedBehavior {
 		List<Plan> plans = new LinkedList<>();
 
 		for (Vehicle vehicle : vehicles) {
-
 			plans.add(generatePlanV(A.get(vehicle), vehicle));
 		}
 
@@ -315,6 +326,7 @@ public class CentralizedPlanner implements CentralizedBehavior {
 		Plan plan = new Plan(current);
 
 		for (PublicAction action : actions) {
+			assert action.moveTo != null;
 			for (City city : current.pathTo(action.moveTo)) {
 				plan.appendMove(city);
 			}
@@ -327,7 +339,6 @@ public class CentralizedPlanner implements CentralizedBehavior {
 			}
 
 			current = action.moveTo;
-			assert current != null;
 		}
 
 		return plan;

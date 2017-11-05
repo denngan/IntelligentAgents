@@ -26,14 +26,14 @@ public class PublicAction {
     
     public PublicAction (Task task, ActionType actionType){
         this.task=task;
-        assert task != null;
+
         this.actionType=actionType;
         if (actionType==ActionType.PICKUP){
             moveTo=task.pickupCity;       
         }    else {
             moveTo=task.deliveryCity;
         }
-        
+		assert moveTo != null;
     }
     
 }
