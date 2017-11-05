@@ -21,11 +21,12 @@ public class PublicAction {
         PICKUP,DELIVERY
     }
     
-    City moveTo;
+    final City moveTo;
     
     
     public PublicAction (Task task, ActionType actionType){
         this.task=task;
+        assert task != null;
         this.actionType=actionType;
         if (actionType==ActionType.PICKUP){
             moveTo=task.pickupCity;       
