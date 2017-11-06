@@ -30,14 +30,14 @@ $nextAction = [nextAction(a1), . . . , nextAction(a_{N_A}
 )]$
 One variable from the nextAction array can take as a value another action,
 or the value NULL:
-$nextAction(x) \in A \cup \{NULL\}$, where for every task, there is a pickup and delivery action:
-$A = \{p(t), a(t) \colon t \text{ is a tast}\}$.
+$nextAction(x) \in A \cup \{NULL\}$, where for every task there is a pickup and delivery action:
+$A = \{p(t), a(t) \colon t \text{ is a task}\}$.
 with the following semantics:
 \begin{itemize}
 	\item  if $nextAction(a_i) = a_j$ it means that some vehicle will do action $a_j$ immediately after $a_i$;
-	\item  $if nextAction(v_k) = a_j$ it means that the vehicle $v_k$ does action $a_j$ (pickup) at first ;
+	\item  if $nextAction(v_k) = a_j$ it means that the vehicle $v_k$ does action $a_j$ (pickup) at first ;
 	\item if $nextAction(a_i) = NULL$, the vehicle that did action $a_i$ (delivery) has nothing left to do;
-	\item if $nextAction(vk) = NULL$, the vehicle vk does not have to any action.
+	\item if $nextAction(v_k) = NULL$, the vehicle $v_k$ does not have to any action.
 \end{itemize}
 
 One variable from the vehicle array can take as a value the code of the
@@ -46,7 +46,7 @@ $$ vehicle(a) \in V$$
 
 \subsubsection{Implementation}
 We implemented this a bit differently:
-The datastructure is a map of lists of action.
+The datastructure is a map of lists of actions.
 Every list corresponds to the actions one vehicle has to perform.
 The first element of the list of vehicle $v$ is $nextAction(v)$.
 The successor of an action in the list is the result of nextAction.
@@ -58,7 +58,12 @@ The successor of an action in the list is the result of nextAction.
 	action;
 	\item All tasks have to be delivered:
 	the set of actions in $nextAction$ has to equal $A$ plus $N_V$ times NULL.
-	\item CAPACITY TODO	
+	\item The sum of the vehicle's carried tasks weight at any time $i$ may never exceed the vehicle's capacity.
+	Be an action either a pickup or a delivery of a task: $a \in \{p(t),d(t)\}$ and be $load(v,i) = \sum_{\substack{
+	p(t) \in \{a|vehicle(a)=v\}\\
+   	time(p(t)) \leq i  \wedge  time(d(t))>i}} 
+	 weight(p(t))$  	
+	Then the constraint is: $\forall i,v: load(v,i) \leq capacity(v) $
 	\item $nextAction(v) = a \implies vehicle(a) = v$
 	\item $nextAction(a) = b \impliedby vehicle(a) = vehicle(b)$
 \end{enumerate}
@@ -80,10 +85,18 @@ The total cost of the company is defined as:
 \section{Stochastic optimization}
 
 \subsection{Initial solution}
-% Describe how you generate the initial solution %
+% Describe how you generate the initial solution 
+For the initial solution, we assign all actions randomly to the vehicles while being consistent with the constraints. 
 
 \subsection{Generating neighbours}
 % Describe how you generate neighbors %
+The $chooseNeighbours()$ function provides a set of candidate assignments close to current one and possibly improving it. 
+In each iteration, we choose one vehicle at random and use two local operators for ﬁnding the neighbours of the current solution.
+\begin{description}
+	\item $Changing$ $vehicle$: takes the ﬁrst task from the tasks of one vehicle and give it to another vehicle.
+
+	\item $Changing$ $action$ $order$: takes the according pickup and delivery actions for a vehicle's task and permutes through all possible positions of these actions in the action order. The resulting neighbouring solutions follow the constraints.
+\end {description}
 
 \subsection{Stochastic optimization algorithm}
 % Describe your stochastic optimization algorithm %
@@ -93,6 +106,10 @@ The total cost of the company is defined as:
 
 \subsection{Experiment 1: Model parameters}
 % if your model has parameters, perform an experiment and analyze the results for different parameter values %
+Probability when choosing equal solutions.
+Iterations without improvement/termination condition?
+adding random stuff to the solutions?
+
 
 \subsubsection{Setting}
 % Describe the settings of your experiment: topology, task configuration, number of tasks, number of vehicles, etc. %
