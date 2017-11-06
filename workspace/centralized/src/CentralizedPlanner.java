@@ -22,9 +22,9 @@ public class CentralizedPlanner implements CentralizedBehavior {
 	private Agent agent;
 	private long timeout_setup;
 	private long timeout_plan;
-	private int MAX_STEPS_WITHOUT_IMPROVEMENT = 50;
+	private int MAX_STEPS_WITHOUT_IMPROVEMENT = 20;
 	private int MAX_STEPS = 10000;
-	private double CHANGEMENT_PROBABILITY = 0.4;
+	private double CHANGEMENT_PROBABILITY = 0.3;
 
 
 	@Override
@@ -74,15 +74,18 @@ public class CentralizedPlanner implements CentralizedBehavior {
 	private Assignment SLS(TaskSet tasks) {
 		int stepsTotal = 0;
 		int stepsWithoutImprovement = 0;
-		Assignment assignment = selectInitialSolution(tasks); // A
+		Assignment assignment = selectInitialSolution2(tasks); // A
 		System.out.println("Initial assignment found");
 		do {
 			Assignment oldAssignment = assignment; // A_old
 			Set<Assignment> neighbours = chooseNeighbours(oldAssignment, tasks);
+			// add additional random solutions if search stagnates
 			for (int i = 0; i < Math.sqrt(stepsWithoutImprovement); i++) {
-				neighbours.add(selectInitialSolution(tasks));
+				neighbours.add(selectInitialSolution2(tasks));
 			}
+
 			assignment = localChoice(neighbours, oldAssignment);
+
 			stepsTotal++;
 			if (costFunction(assignment) == costFunction(oldAssignment)) {
 				stepsWithoutImprovement++;
@@ -126,6 +129,52 @@ public class CentralizedPlanner implements CentralizedBehavior {
 		return a;
 	}
 
+	private Assignment selectInitialSolution2(TaskSet tasks) {
+		Assignment a = new Assignment();
+
+		//create Map with empty lists
+		for (Vehicle vehicle : vehicles) {
+			a.put(vehicle, new VehicleAssignment());
+		}
+
+		List<PublicAction> actionsLeft = new LinkedList<>();
+		tasks.forEach(task -> actionsLeft.add(new PublicAction(task, PublicAction.ActionType.PICKUP)));
+
+		Map<Task, Vehicle> map = new HashMap<>();
+
+		Random random = new Random();
+		while (!actionsLeft.isEmpty()) {
+			int i= random.nextInt(actionsLeft.size());
+			PublicAction action = actionsLeft.get(i);
+			Vehicle vehicle = vehicles.get(random.nextInt(vehicles.size()));
+			VehicleAssignment vehicleAssignment = a.get(vehicle);
+
+			if (action.actionType == PublicAction.ActionType.DELIVERY) {
+				a.get(map.get(action.task)).add(action);
+				actionsLeft.remove(i);
+			} else if (action.actionType == PublicAction.ActionType.PICKUP
+					&& action.task.weight <= vehicle.capacity() - load(vehicle, vehicleAssignment)) {
+				vehicleAssignment.add(action);
+				actionsLeft.remove(i);
+				actionsLeft.add(new PublicAction(action.task, PublicAction.ActionType.DELIVERY));
+				map.put(action.task, vehicle);
+			}
+		}
+		return a;
+	}
+
+	private int load(Vehicle vehicle, VehicleAssignment vehicleAssignment) {
+		int i = 0;
+		for (PublicAction publicAction : vehicleAssignment) {
+			if (publicAction.actionType == PublicAction.ActionType.DELIVERY) {
+				i -= publicAction.task.weight;
+			} else {
+				i += publicAction.task.weight;
+			}
+		}
+		return i;
+	}
+
 	private Set<Assignment> chooseNeighbours(Assignment oldAssignment, TaskSet tasks) {
 		Set<Assignment> neighbours = new HashSet<>();
 		Random random = new Random();
@@ -140,10 +189,14 @@ public class CentralizedPlanner implements CentralizedBehavior {
 		// Applying the changing vehicle operator :
 		vehicles.forEach(vehicle -> {
 			if (vehicle != chosenVehicle) {
-				PublicAction action = oldAssignment.get(chosenVehicle).get(0);
-				if (action.task.weight <= vehicle.capacity()) {
-					neighbours.add(changingVehicle(oldAssignment, chosenVehicle, vehicle));
+				for (int i = 0; i < oldAssignment.get(chosenVehicle).size(); i++) {
+					PublicAction action = oldAssignment.get(chosenVehicle).get(i);
+					if (action.actionType == PublicAction.ActionType.PICKUP
+							&& action.task.weight <= vehicle.capacity()) {
+						neighbours.add(changingVehicle(oldAssignment, chosenVehicle, vehicle, i));
+					}
 				}
+
 			}
 		});
 		System.out.println("Number of neighbours: " + neighbours.size());
@@ -265,6 +318,16 @@ public class CentralizedPlanner implements CentralizedBehavior {
 		return assignment;
 	}
 
+	private Assignment changingVehicle(Assignment oldAssignment, Vehicle vehicleFrom, Vehicle vehicleTo, int index) {
+		Assignment assignment = new Assignment(oldAssignment);
+		PublicAction action = assignment.get(vehicleFrom).get(index);
+		assert action.actionType == PublicAction.ActionType.PICKUP;
+		assignment.get(vehicleFrom).remove(index);
+		assignment.get(vehicleFrom).add(0, action);
+
+		//return oldAssignment;
+		return changingVehicle(assignment, vehicleFrom, vehicleTo);
+	}
 
 	private Assignment localChoice(Set<Assignment> neighbors, Assignment oldA) {
 		List<Assignment> bestAssignments = new LinkedList<>();
@@ -298,6 +361,11 @@ public class CentralizedPlanner implements CentralizedBehavior {
 				return randomBestA; //probability p
 			}
 		}
+//		if (Math.random() > CHANGEMENT_PROBABILITY) {
+//			return oldA;  //probability 1-p
+//		} else {
+//			return randomBestA; //probability p
+//		}
 	}
 
 

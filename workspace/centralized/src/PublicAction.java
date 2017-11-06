@@ -35,5 +35,13 @@ public class PublicAction {
         }
 		assert moveTo != null;
     }
-    
+
+	@Override
+	public String toString() {
+		return "PublicAction{" +
+				"task=" + task +
+				", actionType=" + actionType +
+				", moveTo=" + moveTo +
+				'}';
+	}
 }
