@@ -26,9 +26,11 @@ The idea is to use the provided CSP and decompose a task into a pickup action an
 nextAction: 
 an array of $N_A +N_V$ variables. 
 The array contains one variable	for every existing action, and one variable for every existing vehicle:
+\begin {center}
 $nextAction = [nextAction(a1), . . . , nextAction(a_{N_A}
 ), nextAction(v1), . . ., nextAction(v_{N_V}
 )]$
+\end{center}
 One variable from the nextAction array can take as a value another action,
 or the value NULL:
 $nextAction(x) \in A \cup \{NULL\}$, where for every task there is a pickup and delivery action:
