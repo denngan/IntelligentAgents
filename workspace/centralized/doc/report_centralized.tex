@@ -2,6 +2,7 @@
 
 \usepackage{amsmath}
 \usepackage{textcomp}
+\usepackage[a4paper, margin=1in]{geometry}
 
 % Add other packages here %
 
@@ -132,26 +133,31 @@ In this experiment we change the number of tasks and the nubmer of vehicles and 
 The table shows that the amount of tasks is proportional to the number of iterations the program undertakes before there is no improvement anymore. The runtime climbes exponentially tough with more tasks, which is caused by the function that changes the task order by permuting through each task in the vehicle. The costs increase more slowly because there are not so many cities and thus sinergies can be used by the vehicles.
 % Reflect on the fairness of the optimal plans. Observe that optimality requires some vehicles to do more work than others. %
 Even though the costs per kilometer are all equal we observe that the vehicles carry different amount of tasks. That is because the algorithm optimizez only for the costs. It does not try to have all vehicles be filled with the same amount of tasks. Thus optimal solutions are not necessarily fair in the sense of the amount of carried tasks. 
-\begin{tabular}{ c  |c c c }
 
+\begin{center}
+\begin{tabular}{ c  |c c c }
  tasks & runtime & iterations&cost  \\ 
 \hline
  60 & 131s &155 &44300 \\  
  45 & 39s &108 &35741\\
  30 & 12s &64& 29900\\
  15&1s&18&19635
+
 \end{tabular}
+\end{center}
+
 
 % How does the complexity of your algorithm depend on the number of vehicles and various sizes of the task set? %
 On top we observe with a fixed amount of tasks: the more vehicles there are, the faster the computations is. That is because this way each vehicle get less tasks and thus the changing task order in one vehicle is much faster. We can see that with less vehicles the runtime grows exponentially.
+\begin{center}
 \begin{tabular}{ c  |c  }
-
+\centering
  vehicles & runtime  \\ 
 \hline
  4 & 12s  \\  
  3 & 18s \\
  2 & 46s \\
 \end{tabular}
-
+\end{center}
 
 \end{document}
