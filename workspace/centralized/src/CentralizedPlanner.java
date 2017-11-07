@@ -22,9 +22,9 @@ public class CentralizedPlanner implements CentralizedBehavior {
 	private Agent agent;
 	private long timeout_setup;
 	private long timeout_plan;
-	private int MAX_STEPS_WITHOUT_IMPROVEMENT = 20;
-	private int MAX_STEPS = 10000;
-	private double CHANGEMENT_PROBABILITY = 0.3;
+	private int MAX_STEPS_WITHOUT_IMPROVEMENT = 70;
+	private int MAX_STEPS = 3700;
+	private double CHANGEMENT_PROBABILITY = 0.4;
 
 
 	@Override
@@ -72,6 +72,7 @@ public class CentralizedPlanner implements CentralizedBehavior {
 	 * @return
 	 */
 	private Assignment SLS(TaskSet tasks) {
+                long time_start = System.currentTimeMillis();
 		int stepsTotal = 0;
 		int stepsWithoutImprovement = 0;
 		Assignment assignment = selectInitialSolution2(tasks); // A
@@ -94,7 +95,7 @@ public class CentralizedPlanner implements CentralizedBehavior {
 			}
 			System.out.println("Step " + stepsTotal + "; without improvement: " + stepsWithoutImprovement);
 		} while (stepsTotal < MAX_STEPS
-				&& stepsWithoutImprovement < MAX_STEPS_WITHOUT_IMPROVEMENT);
+				&& stepsWithoutImprovement < MAX_STEPS_WITHOUT_IMPROVEMENT && (System.currentTimeMillis()-time_start)<timeout_plan-5000 );
 		return assignment;
 	}
 
