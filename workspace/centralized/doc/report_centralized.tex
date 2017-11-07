@@ -8,7 +8,7 @@
 
 % Put your group number and names in the author field %
 \title{\bf Excercise 4\\ Implementing a centralized agent}
-\author{Group \textnumero : Student 1, Student 2}
+\author{Group \textnumero 29 : Daniel Mock, Dennis Gankin, Donald Duck}
 
 
 % N.B.: The report should not be longer than 3 pages %
@@ -116,7 +116,7 @@ We use four vehicle in England and seed 12345. We first change one parameter at 
 \subsubsection{Observations}
 % Describe the experimental results and the conclusions you inferred from these results %
 The change probability does not affect the computation a lot. With every value the average final cost is the same around 29900. But the higher the probability that a new solution is picked, the longer the program takes to compute. While for $p=0.1$ the program takes 11 s for $p=0.5$ it takes 12 seconds and for $p=0.9$ it takes 13 seconds. 
-Very high maximum iterations without improvement (100 and 1000) show that on average there are 64 iterations with changes to the costs before the improvement stops. Thus a value over 64 will guarantee with a high probability that no possible later changes are cut off. This happens for maximum iterations without improvement set to 10. Even though the program is on average much faster (3 secons compared to 12 seconds with 70) the final costs are 33100 and much higher than 29900 with more iterations. That is because this way the algorithms stops in a local minimum that it would otherwise have left again after a few iterations. Thus maximum iterations without improvement set to 70 should be a good choice.
+Very high maximum iterations without improvement (100 and 1000) show that on average there are 64 iterations with changes to the costs before the improvement stops. Thus a value over 64 will guarantee with a high probability that no possible later changes are cut off. This happens for maximum iterations without improvement set to 10. Even though the program is on average much faster (3 secons compared to 12 seconds with 70) the final cost is 33100 which is much higher than 29900 with more iterations. That is because this way the algorithms stops in a local minimum that it would otherwise have left again after a few iterations. Thus maximum iterations without improvement set to 70 should be a good choice.
 
 
 \subsection{Experiment 2: Different configurations}
@@ -124,10 +124,34 @@ Very high maximum iterations without improvement (100 and 1000) show that on ave
 
 \subsubsection{Setting}
 % Describe the settings of your experiment: topology, task configuration, number of tasks, number of vehicles, etc. %
+In this experiment we change the number of tasks and the nubmer of vehicles and analyse how the changes affect the results. We use England with random seed 12345.
+
 
 \subsubsection{Observations}
 % Describe the experimental results and the conclusions you inferred from these results %
+The table shows that the amount of tasks is proportional to the number of iterations the program undertakes before there is no improvement anymore. The runtime climbes exponentially tough with more tasks, which is caused by the function that changes the task order by permuting through each task in the vehicle. The costs increase more slowly because there are not so many cities and thus sinergies can be used by the vehicles.
 % Reflect on the fairness of the optimal plans. Observe that optimality requires some vehicles to do more work than others. %
+Even though the costs per kilometer are all equal we observe that the vehicles carry different amount of tasks. That is because the algorithm optimizez only for the costs. It does not try to have all vehicles be filled with the same amount of tasks. Thus optimal solutions are not necessarily fair in the sense of the amount of carried tasks. 
+\begin{tabular}{ c  |c c c }
+
+ tasks & runtime & iterations&cost  \\ 
+\hline
+ 60 & 131s &155 &44300 \\  
+ 45 & 39s &108 &35741\\
+ 30 & 12s &64& 29900\\
+ 15&1s&18&19635
+\end{tabular}
+
 % How does the complexity of your algorithm depend on the number of vehicles and various sizes of the task set? %
+On top we observe with a fixed amount of tasks: the more vehicles there are, the faster the computations is. That is because this way each vehicle get less tasks and thus the changing task order in one vehicle is much faster. We can see that with less vehicles the runtime grows exponentially.
+\begin{tabular}{ c  |c  }
+
+ vehicles & runtime  \\ 
+\hline
+ 4 & 12s  \\  
+ 3 & 18s \\
+ 2 & 46s \\
+\end{tabular}
+
 
 \end{document}
