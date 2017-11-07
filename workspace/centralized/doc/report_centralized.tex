@@ -106,17 +106,18 @@ In each iteration, we choose one vehicle at random and use two local operators f
 
 \subsection{Experiment 1: Model parameters}
 % if your model has parameters, perform an experiment and analyze the results for different parameter values %
-Probability when choosing equal solutions.
-Iterations without improvement/termination condition?
-adding random stuff to the solutions?
-
+The model has two parameters: maximum iterations without improvement of the solution and the change probability. The change probability  chooses a new assignment with probability $p$ over the old one if their cost is the same.
 
 \subsubsection{Setting}
 % Describe the settings of your experiment: topology, task configuration, number of tasks, number of vehicles, etc. %
 % and the parameters you are analyzing %
+We use four vehicle in England and seed 12345. We first change one parameter at a time and analyze its influence on the model.
 
 \subsubsection{Observations}
 % Describe the experimental results and the conclusions you inferred from these results %
+The change probability does not affect the computation a lot. With every value the average final cost is the same around 29900. But the higher the probability that a new solution is picked, the longer the program takes to compute. While for $p=0.1$ the program takes 11 s for $p=0.5$ it takes 12 seconds and for $p=0.9$ it takes 13 seconds. 
+Very high maximum iterations without improvement (100 and 1000) show that on average there are 64 iterations with changes to the costs before the improvement stops. Thus a value over 64 will guarantee with a high probability that no possible later changes are cut off. This happens for maximum iterations without improvement set to 10. Even though the program is on average much faster (3 secons compared to 12 seconds with 70) the final costs are 33100 and much higher than 29900 with more iterations. That is because this way the algorithms stops in a local minimum that it would otherwise have left again after a few iterations. Thus maximum iterations without improvement set to 70 should be a good choice.
+
 
 \subsection{Experiment 2: Different configurations}
 % Run simulations for different configurations of the environment (i.e. different tasks and number of vehicles) %
