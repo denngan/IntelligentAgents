@@ -21,7 +21,7 @@
 \section{Solution Representation}
 
 \subsection{Variables}
-The idea is to use the provided CSP and decompose a task into a pickup action and delivery action:
+The idea is to use the provided CSP and decompose a task into a pickup action and delivery action. Thus we define:
 
 nextAction: 
 an array of $N_A +N_V$ variables. 
@@ -31,8 +31,8 @@ $nextAction = [nextAction(a1), . . . , nextAction(a_{N_A}
 ), nextAction(v1), . . ., nextAction(v_{N_V}
 )]$
 \end{center}
-One variable from the nextAction array can take as a value another action,
-or the value NULL:
+One variable from the nextAction array can take another action
+or NULL as a value :
 $nextAction(x) \in A \cup \{NULL\}$, where for every task there is a pickup and delivery action:
 $A = \{p(t), a(t) \colon t \text{ is a task}\}$.
 with the following semantics:
@@ -93,16 +93,18 @@ For the initial solution, we assign all actions randomly to the vehicles while b
 
 \subsection{Generating neighbours}
 % Describe how you generate neighbors %
-The $chooseNeighbours()$ function provides a set of candidate assignments close to current one and possibly improving it. 
-In each iteration, we choose one vehicle at random and use two local operators for ﬁnding the neighbours of the current solution.
+The $chooseNeighbours()$ function provides a set of candidate assignments close to the current one and possibly improving it. 
+In each iteration, we choose one vehicle at random and use two local operators for finding the neighbours of the current solution.
 \begin{description}
-	\item $Changing$ $vehicle$: takes the ﬁrst task from the tasks of one vehicle and give it to another vehicle.
+	\item $Changing$ $vehicle$: takes one vehicle's first task and assigns it to another vehicle.
 
 	\item $Changing$ $action$ $order$: takes the according pickup and delivery actions for a vehicle's task and permutes through all possible positions of these actions in the action order. The resulting neighbouring solutions follow the constraints.
 \end {description}
 
 \subsection{Stochastic optimization algorithm}
 % Describe your stochastic optimization algorithm %
+The tochastich optimization algorithm follows the standard SLS as defined in the paper "Finding the Optimal Delivery Plan: Model as a Constraint Satisfaction Problem"
+for solving the given CSP
 
 
 \section{Results}
@@ -114,11 +116,11 @@ The model has two parameters: maximum iterations without improvement of the solu
 \subsubsection{Setting}
 % Describe the settings of your experiment: topology, task configuration, number of tasks, number of vehicles, etc. %
 % and the parameters you are analyzing %
-We use four vehicle in England and seed 12345. We first change one parameter at a time and analyze its influence on the model.
+We use four vehicles in England and seed 12345. We first change one parameter at a time and analyze its influence on the model.
 
 \subsubsection{Observations}
 % Describe the experimental results and the conclusions you inferred from these results %
-The change probability does not affect the computation a lot. With every value the average final cost is the same around 29900. But the higher the probability that a new solution is picked, the longer the program takes to compute. While for $p=0.1$ the program takes 11 s for $p=0.5$ it takes 12 seconds and for $p=0.9$ it takes 13 seconds. 
+The change probability does not affect the computation a lot. With every value the average final cost is the same around 29900. But the higher the probability that a new solution is picked over the old one, the longer the program takes to compute. While for $p=0.1$ the program takes 11 s for $p=0.5$ it takes 12 seconds and for $p=0.9$ it takes 13 seconds. 
 Very high maximum iterations without improvement (100 and 1000) show that on average there are 64 iterations with changes to the costs before the improvement stops. Thus a value over 64 will guarantee with a high probability that no possible later changes are cut off. This happens for maximum iterations without improvement set to 10. Even though the program is on average much faster (3 secons compared to 12 seconds with 70) the final cost is 33100 which is much higher than 29900 with more iterations. That is because this way the algorithms stops in a local minimum that it would otherwise have left again after a few iterations. Thus maximum iterations without improvement set to 70 should be a good choice.
 
 
