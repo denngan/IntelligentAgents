@@ -1,0 +1,9 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="centralized:jar">
+    <output-path>$PROJECT_DIR$/bin/artifacts/centralized_jar</output-path>
+    <root id="archive" name="centralized.jar">
+      <element id="module-output" name="centralized" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/../logist/logist.jar" path-in-jar="/" />
+    </root>
+  </artifact>
+</component>
