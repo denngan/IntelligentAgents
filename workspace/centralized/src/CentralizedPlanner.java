@@ -1,4 +1,5 @@
 import java.util.*;
+import java.util.concurrent.*;
 
 import logist.LogistSettings;
 
@@ -22,8 +23,8 @@ public class CentralizedPlanner implements CentralizedBehavior {
 	private Agent agent;
 	private long timeout_setup;
 	private long timeout_plan;
-	private int MAX_STEPS_WITHOUT_IMPROVEMENT = 70;
-	private int MAX_STEPS = 3700;
+	private int MAX_STEPS_WITHOUT_IMPROVEMENT = 20;
+	private int MAX_STEPS = 1000;
 	private double CHANGEMENT_PROBABILITY = 0.4;
 
 
@@ -43,7 +44,8 @@ public class CentralizedPlanner implements CentralizedBehavior {
 		timeout_setup = ls.get(LogistSettings.TimeoutKey.SETUP);
 		// the plan method cannot execute more than timeout_plan milliseconds
 		timeout_plan = ls.get(LogistSettings.TimeoutKey.PLAN);
-
+		timeout_plan = 10000;
+		System.out.println("Time for plan:" + timeout_plan);
 		this.topology = topology;
 		this.distribution = distribution;
 		this.agent = agent;
@@ -55,17 +57,52 @@ public class CentralizedPlanner implements CentralizedBehavior {
 	public List<Plan> plan(List<Vehicle> vehicles, TaskSet tasks) {
 		long time_start = System.currentTimeMillis();
 
-		Assignment assignment = SLS(tasks);
+		Assignment assignment = stochasticRestart(tasks, timeout_plan);
 
 		List<Plan> plans = generatePlan(assignment);
 
 		long time_end = System.currentTimeMillis();
 		long duration = time_end - time_start;
 		System.out.println("The plan was generated in " + duration + " milliseconds.");
-		System.out.println("The cost of the plan is " + costFunction(assignment) +".");
+		System.out.println("The cost of the plan is " + assignmentCost(assignment) +".");
 		return plans;
 	}
 
+
+	private Assignment stochasticRestart(TaskSet tasks, long timeOut) {
+		final ExecutorService service = Executors.newSingleThreadExecutor();
+		// maybe dont use currenttimemillis
+		long deadline = System.currentTimeMillis() + timeOut - 100;
+
+		Assignment bestAssignment = null;
+		double bestCost = Double.MAX_VALUE;
+
+		while (true) {
+			Assignment currentAssignment;
+			long timeLeft = deadline - System.currentTimeMillis();
+
+			if (timeLeft <= 0) {
+				return bestAssignment;
+			}
+
+			try {
+				final Future<Assignment> f = service.submit(() -> SLS(tasks));
+				// maybe give even less time
+				currentAssignment = f.get(timeLeft, TimeUnit.MILLISECONDS);
+			} catch (final TimeoutException e) {
+				service.shutdown();
+				return bestAssignment;
+			} catch (final Exception e) {
+				throw new RuntimeException(e);
+			}
+
+			System.out.println(assignmentCost(currentAssignment));
+			if (assignmentCost(currentAssignment) < bestCost) {
+				bestAssignment = currentAssignment;
+				bestCost = assignmentCost(currentAssignment);
+			}
+		}
+	}
 
 	/**
 	 * @param tasks
@@ -76,7 +113,6 @@ public class CentralizedPlanner implements CentralizedBehavior {
 		int stepsTotal = 0;
 		int stepsWithoutImprovement = 0;
 		Assignment assignment = selectInitialSolution2(tasks); // A
-		System.out.println("Initial assignment found");
 		do {
 			Assignment oldAssignment = assignment; // A_old
 			Set<Assignment> neighbours = chooseNeighbours(oldAssignment, tasks);
@@ -88,12 +124,12 @@ public class CentralizedPlanner implements CentralizedBehavior {
 			assignment = localChoice(neighbours, oldAssignment);
 
 			stepsTotal++;
-			if (costFunction(assignment) == costFunction(oldAssignment)) {
+			if (assignmentCost(assignment) == assignmentCost(oldAssignment)) {
 				stepsWithoutImprovement++;
 			} else {
 				stepsWithoutImprovement = 0;
 			}
-			System.out.println("Step " + stepsTotal + "; without improvement: " + stepsWithoutImprovement);
+			// System.out.println("Step " + stepsTotal + "; without improvement: " + stepsWithoutImprovement);
 		} while (stepsTotal < MAX_STEPS
 				&& stepsWithoutImprovement < MAX_STEPS_WITHOUT_IMPROVEMENT && (System.currentTimeMillis()-time_start)<timeout_plan-5000 );
 		return assignment;
@@ -200,7 +236,7 @@ public class CentralizedPlanner implements CentralizedBehavior {
 
 			}
 		});
-		System.out.println("Number of neighbours: " + neighbours.size());
+		// System.out.println("Number of neighbours: " + neighbours.size());
 
 		// Applying the Changing task order operator :
 		// compute the number of tasks of the vehicle
@@ -214,7 +250,7 @@ public class CentralizedPlanner implements CentralizedBehavior {
 			}
 		}
 
-		System.out.println("Number of neighbours: " + neighbours.size());
+		// System.out.println("Number of neighbours: " + neighbours.size());
 		return neighbours;
 	}
 
@@ -336,12 +372,11 @@ public class CentralizedPlanner implements CentralizedBehavior {
 
 		//get all the best results
 		for (Assignment newA : neighbors) {
-			System.out.println(costFunction(newA));
-			if (costFunction(newA) < bestCost) {
+			if (assignmentCost(newA) < bestCost) {
 				bestAssignments.clear();
 				bestAssignments.add(newA);
-				bestCost = costFunction(newA);
-			} else if (costFunction(newA) == bestCost) {
+				bestCost = assignmentCost(newA);
+			} else if (assignmentCost(newA) == bestCost) {
 				bestAssignments.add(newA);
 			}
 		}
@@ -350,9 +385,9 @@ public class CentralizedPlanner implements CentralizedBehavior {
 		Random random = new Random();
 		Assignment randomBestA = bestAssignments.get(random.nextInt(bestAssignments.size()));
 
-		if (costFunction(oldA) > bestCost) {
+		if (assignmentCost(oldA) > bestCost) {
 			return randomBestA;
-		} else if (costFunction(oldA) < bestCost) {
+		} else if (assignmentCost(oldA) < bestCost) {
 			System.out.println("chose old assignment");
 			return oldA;
 		} else {
@@ -370,11 +405,11 @@ public class CentralizedPlanner implements CentralizedBehavior {
 	}
 
 
-	private double costFunction(Assignment A) {
+	private double assignmentCost(Assignment A) {
 		double costs = 0;
 
 		for (Vehicle vehicle : vehicles) {
-			costs += generatePlanV(A.get(vehicle), vehicle).totalDistance() * vehicle.costPerKm();
+			costs += generatePlanForVehicle(A.get(vehicle), vehicle).totalDistance() * vehicle.costPerKm();
 		}
 
 		return costs;
@@ -386,14 +421,14 @@ public class CentralizedPlanner implements CentralizedBehavior {
 		List<Plan> plans = new LinkedList<>();
 
 		for (Vehicle vehicle : vehicles) {
-			plans.add(generatePlanV(A.get(vehicle), vehicle));
+			plans.add(generatePlanForVehicle(A.get(vehicle), vehicle));
 		}
 
 		return plans;
 	}
 
 
-	private Plan generatePlanV(VehicleAssignment actions, Vehicle vehicle) {
+	private Plan generatePlanForVehicle(VehicleAssignment actions, Vehicle vehicle) {
 		City current = vehicle.getCurrentCity();
 		Plan plan = new Plan(current);
 
