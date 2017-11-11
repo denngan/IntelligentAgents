@@ -1,6 +1,8 @@
+import logist.task.Task;
 import logist.topology.Topology;
 
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -28,5 +30,11 @@ public class VehicleAssignment extends LinkedList<PublicAction> {
 		}
 
 		return costs;
+	}
+
+	public Task removeTask(int index) {
+		Task toRemove = get(index).task;
+		this.removeIf(a -> a.task == toRemove);
+		return toRemove;
 	}
 }

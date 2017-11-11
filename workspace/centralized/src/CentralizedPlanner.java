@@ -1,5 +1,6 @@
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.stream.Collectors;
 
 import logist.LogistSettings;
 
@@ -27,6 +28,8 @@ public class CentralizedPlanner implements CentralizedBehavior {
 	private int MAX_STEPS = 1000;
 	private double CHANGEMENT_PROBABILITY = 0.4;
 
+	private Map<Task, PublicAction> taskToPickup;
+	private Map<Task, PublicAction> taskToDelivery;
 
 	@Override
 	public void setup(Topology topology, TaskDistribution distribution,
@@ -44,7 +47,7 @@ public class CentralizedPlanner implements CentralizedBehavior {
 		timeout_setup = ls.get(LogistSettings.TimeoutKey.SETUP);
 		// the plan method cannot execute more than timeout_plan milliseconds
 		timeout_plan = ls.get(LogistSettings.TimeoutKey.PLAN);
-		timeout_plan = 10000;
+		//timeout_plan = 10000; //TODO REMOVE
 		System.out.println("Time for plan:" + timeout_plan);
 		this.topology = topology;
 		this.distribution = distribution;
@@ -57,6 +60,13 @@ public class CentralizedPlanner implements CentralizedBehavior {
 	public List<Plan> plan(List<Vehicle> vehicles, TaskSet tasks) {
 		long time_start = System.currentTimeMillis();
 
+		taskToPickup = new HashMap<>();
+		taskToDelivery = new HashMap<>();
+		tasks.forEach(task -> {
+			taskToPickup.put(task, new PublicAction(task, PublicAction.ActionType.PICKUP));
+			taskToDelivery.put(task, new PublicAction(task, PublicAction.ActionType.DELIVERY));
+		});
+
 		Assignment assignment = stochasticRestart(tasks, timeout_plan);
 
 		List<Plan> plans = generatePlan(assignment);
@@ -65,6 +75,8 @@ public class CentralizedPlanner implements CentralizedBehavior {
 		long duration = time_end - time_start;
 		System.out.println("The plan was generated in " + duration + " milliseconds.");
 		System.out.println("The cost of the plan is " + assignmentCost(assignment) + ".");
+
+
 		return plans;
 	}
 
@@ -77,11 +89,13 @@ public class CentralizedPlanner implements CentralizedBehavior {
 		Assignment bestAssignment = null;
 		double bestCost = Double.MAX_VALUE;
 
+		int iteration = 0;
 		while (true) {
 			Assignment currentAssignment;
 			long timeLeft = deadline - System.currentTimeMillis();
 
 			if (timeLeft <= 0) {
+				System.out.println("" + iteration + " iterations");
 				return bestAssignment;
 			}
 
@@ -91,11 +105,13 @@ public class CentralizedPlanner implements CentralizedBehavior {
 				currentAssignment = f.get(timeLeft, TimeUnit.MILLISECONDS);
 			} catch (final TimeoutException e) {
 				service.shutdown();
+				System.out.println("" + iteration + " iterations");
 				return bestAssignment;
 			} catch (final Exception e) {
 				throw new RuntimeException(e);
 			}
 
+			iteration++;
 			System.out.println(assignmentCost(currentAssignment));
 			if (assignmentCost(currentAssignment) < bestCost) {
 				bestAssignment = currentAssignment;
@@ -115,10 +131,27 @@ public class CentralizedPlanner implements CentralizedBehavior {
 		Assignment assignment = selectInitialSolution2(tasks); // A
 		do {
 			Assignment oldAssignment = assignment; // A_old
-			Set<Assignment> neighbours = chooseNeighbours(oldAssignment, tasks);
+			//Set<Assignment> neighbours = chooseNeighbours(oldAssignment, tasks);
 			// add additional random solutions if search stagnates
 //			for (int i = 0; i < Math.sqrt(stepsWithoutImprovement); i++) {
 //				neighbours.add(selectInitialSolution2(tasks));
+//			}
+			Set<Assignment> neighbours = new HashSet<>();
+			for (int i = 0; i < 120; i++) {
+				Assignment newAssignment = randomNeighbour(oldAssignment);
+				if (newAssignment != null) {
+					neighbours.add(newAssignment);
+				}
+			}
+
+			List<Assignment> list = new ArrayList<>(neighbours);
+
+//			for (int i = 0; i < 200; i++) {
+//				int r = ThreadLocalRandom.current().nextInt(list.size());
+//				Assignment newAssignment = randomNeighbour(list.get(r));
+//				if (newAssignment != null) {
+//					neighbours.add(newAssignment);
+//				}
 //			}
 
 			assignment = localChoice(neighbours, oldAssignment);
@@ -133,9 +166,93 @@ public class CentralizedPlanner implements CentralizedBehavior {
 		} while (stepsTotal < MAX_STEPS
 				&& stepsWithoutImprovement < MAX_STEPS_WITHOUT_IMPROVEMENT
 				&& (System.currentTimeMillis() - time_start) < timeout_plan - 5000);
+		System.out.println(stepsTotal);
 		return assignment;
 	}
 
+
+	// returns a random neighbour
+	// steps: choose vehicle
+	// choose which task to delete
+	// choose where to add this task (vehicle, pos)
+	private Assignment randomNeighbour(Assignment oldAssignment) {
+		Random random = new Random();
+		Assignment assignment = new Assignment(oldAssignment);
+
+		Vehicle vehicleFrom;
+		VehicleAssignment vehicleAssignment;
+		do {
+			vehicleFrom = vehicles.get(random.nextInt(vehicles.size()));
+			vehicleAssignment = assignment.get(vehicleFrom);
+		} while (vehicleAssignment.size() <= 0);
+
+		int index = random.nextInt(vehicleAssignment.size());
+		Task task = vehicleAssignment.removeTask(index);
+
+		Vehicle vehicleTo = vehicles.get(random.nextInt(vehicles.size()));
+		vehicleAssignment = assignment.get(vehicleTo);
+//		index = random.nextInt(vehicleAssignment.size() + 1);
+//		int index2 = random.nextInt(vehicleAssignment.size() - index + 1) + index + 1;
+//
+//		// check for validity
+//		int[] loadArray = load(vehicleAssignment);
+//		boolean spaceLeft = true;
+//		for (int i = index; i < index2; i++) {
+//			if (loadArray[i] > vehicleTo.capacity() - task.weight) {
+//				spaceLeft = false;
+//				break;
+//			}
+//		}
+//		if (spaceLeft) {
+//			vehicleAssignment.add(index, taskToPickup.get(task));
+//			vehicleAssignment.add(index2, taskToDelivery.get(task));
+//			return assignment;
+//		}
+
+		// precompute the space left after each action
+		int weight = task.weight;
+		int[] spaceLeft = new int[vehicleAssignment.size() + 2];
+		spaceLeft[0] = vehicleTo.capacity();
+		for (int j = 0; j < vehicleAssignment.size(); j++) {
+			if (vehicleAssignment.get(j).actionType == PublicAction.ActionType.PICKUP) {
+				spaceLeft[j + 1] = spaceLeft[j] - vehicleAssignment.get(j).task.weight;
+			} else { // delivery
+				spaceLeft[j + 1] = spaceLeft[j] + vehicleAssignment.get(j).task.weight;
+			}
+		}
+		spaceLeft[spaceLeft.length - 1] = weight;
+
+		int index1 = 0, index2 = 1;
+		int p = 1;
+		int stop = 0;
+		for (int i = 0; i < spaceLeft.length - 1; i++) {
+			if (spaceLeft[i] < weight) {
+				for (int k = stop; k < i; k++) {
+					for (int l = k; l <= i; l++) {
+						if (random.nextDouble() < 1d / p) {
+							index1 = k;
+							index2 = l+1;
+						}
+						p++;
+					}
+				}
+				stop = i + 1;
+			}
+		}
+		for (int k = stop; k < spaceLeft.length - 1; k++) {
+			for (int l = k; l < spaceLeft.length - 1; l++) {
+				if (random.nextDouble() < 1d / p) {
+					index1 = k;
+					index2 = l+1;
+				}
+				p++;
+			}
+		}
+
+		vehicleAssignment.add(index1, taskToPickup.get(task));
+		vehicleAssignment.add(index2, taskToDelivery.get(task));
+		return assignment;
+	}
 
 	private Assignment selectInitialSolution(TaskSet tasks) {
 		int numVehicles = vehicles.size();
@@ -204,6 +321,7 @@ public class CentralizedPlanner implements CentralizedBehavior {
 	// computes the load of the vehicle
 	// after the vehicle assignment, how heavy are all tasks that in the vehicle (picked up, but not delivered)
 	private int load(Vehicle vehicle, VehicleAssignment vehicleAssignment) {
+		int[] load = new int[vehicleAssignment.size()];
 		int i = 0;
 		for (PublicAction publicAction : vehicleAssignment) {
 			if (publicAction.actionType == PublicAction.ActionType.DELIVERY) {
@@ -213,6 +331,20 @@ public class CentralizedPlanner implements CentralizedBehavior {
 			}
 		}
 		return i;
+	}
+
+	private int[] load(VehicleAssignment vehicleAssignment){
+		int[] loadArray = new int[vehicleAssignment.size() + 2];
+		loadArray[0] = 0;
+		for (int j = 0; j < vehicleAssignment.size(); j++) {
+			if (vehicleAssignment.get(j).actionType == PublicAction.ActionType.PICKUP) {
+				loadArray[j + 1] = loadArray[j] + vehicleAssignment.get(j).task.weight;
+			} else { // delivery
+				loadArray[j + 1] = loadArray[j] - vehicleAssignment.get(j).task.weight;
+			}
+		}
+		loadArray[loadArray.length - 1] = 0;
+		return loadArray;
 	}
 
 	private Set<Assignment> chooseNeighbours(Assignment oldAssignment, TaskSet tasks) {
@@ -415,7 +547,7 @@ public class CentralizedPlanner implements CentralizedBehavior {
 
 
 	private double assignmentCost(Assignment A) {
-		double costs = 0;
+		double costs = 0.0;
 
 		for (Vehicle vehicle : vehicles) {
 			costs += A.get(vehicle).totalDistance() * vehicle.costPerKm();
@@ -425,12 +557,9 @@ public class CentralizedPlanner implements CentralizedBehavior {
 	}
 
 
-
-
 	private List<Plan> generatePlan(Assignment A) {
-
 		List<Plan> plans = new LinkedList<>();
-
+		assert A != null;
 		for (Vehicle vehicle : vehicles) {
 			plans.add(generatePlanForVehicle(A.get(vehicle), vehicle));
 		}
