@@ -1,3 +1,5 @@
+package centralized;
+
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -6,6 +8,8 @@ import logist.LogistSettings;
 import logist.behavior.CentralizedBehavior;
 import logist.agent.Agent;
 import logist.config.Parsers;
+import logist.plan.IllegalPlanException;
+import logist.plan.PlanVerifier;
 import logist.simulation.Vehicle;
 import logist.plan.Plan;
 import logist.task.Task;
@@ -46,7 +50,7 @@ public class CentralizedPlanner implements CentralizedBehavior {
 		timeout_setup = ls.get(LogistSettings.TimeoutKey.SETUP);
 		// the plan method cannot execute more than timeout_plan milliseconds
 		timeout_plan = ls.get(LogistSettings.TimeoutKey.PLAN);
-		timeout_plan = 500; //TODO REMOVE
+		timeout_plan = 10000; //TODO REMOVE
 		System.out.println("Time for plan:" + timeout_plan);
 		this.topology = topology;
 		this.distribution = distribution;
@@ -54,17 +58,18 @@ public class CentralizedPlanner implements CentralizedBehavior {
 		this.vehicles = agent.vehicles();
 	}
 
+	public void setup(Topology topology, TaskDistribution distribution,
+					  Agent agent, long timeout_setup, long timeout_plan) {
+		this.topology = topology;
+		this.distribution = distribution;
+		this.agent = agent;
+		this.vehicles = agent.vehicles();
+		this.timeout_setup = timeout_setup;
+		this.timeout_plan = timeout_plan;
+	}
 
-	@Override
 	public List<Plan> plan(List<Vehicle> vehicles, TaskSet tasks) {
 		long time_start = System.currentTimeMillis();
-
-		taskToPickup = new HashMap<>();
-		taskToDelivery = new HashMap<>();
-		tasks.forEach(task -> {
-			taskToPickup.put(task, new PublicAction(task, PublicAction.ActionType.PICKUP));
-			taskToDelivery.put(task, new PublicAction(task, PublicAction.ActionType.DELIVERY));
-		});
 
 		Assignment assignment = stochasticRestart(tasks, timeout_plan);
 
@@ -80,7 +85,14 @@ public class CentralizedPlanner implements CentralizedBehavior {
 	}
 
 
-	private Assignment stochasticRestart(TaskSet tasks, long timeOut) {
+	public Assignment stochasticRestart(Set<Task> tasks, long timeOut) {
+		taskToPickup = new HashMap<>();
+		taskToDelivery = new HashMap<>();
+		tasks.forEach(task -> {
+			taskToPickup.put(task, new PublicAction(task, PublicAction.ActionType.PICKUP));
+			taskToDelivery.put(task, new PublicAction(task, PublicAction.ActionType.DELIVERY));
+		});
+
 		final ExecutorService service = Executors.newSingleThreadExecutor();
 		// maybe dont use currenttimemillis
 		long deadline = System.currentTimeMillis() + timeOut - 100;
@@ -109,14 +121,14 @@ public class CentralizedPlanner implements CentralizedBehavior {
 			}
 
 			iteration++;
-			System.out.println(assignmentCost(currentAssignment));
+			//System.out.println(assignmentCost(currentAssignment));
 			if (assignmentCost(currentAssignment) < bestCost) {
 				bestAssignment = currentAssignment;
 				bestCost = assignmentCost(currentAssignment);
 			}
 		}
 
-		System.out.println("" + iteration + " iterations");
+		//System.out.println("" + iteration + " iterations");
 		return bestAssignment;
 
 //		List<Assignment> list = new ArrayList<>();
@@ -136,7 +148,7 @@ public class CentralizedPlanner implements CentralizedBehavior {
 	 * @param tasks
 	 * @return
 	 */
-	private Assignment SLS(TaskSet tasks) {
+	private Assignment SLS(Set<Task> tasks) throws Exception {
 		long time_start = System.currentTimeMillis();
 		int stepsTotal = 0;
 		int stepsWithoutImprovement = 0;
@@ -153,6 +165,22 @@ public class CentralizedPlanner implements CentralizedBehavior {
 				Assignment newAssignment = randomNeighbour(oldAssignment);
 				if (newAssignment != null) {
 					neighbours.add(newAssignment);
+				}
+				// TODO remove
+				if (tasks instanceof TaskSet) {
+
+					PlanVerifier vf = new PlanVerifier(topology, (TaskSet) tasks);
+					for (Vehicle v : vehicles) {
+						try {
+							vf.verifyPlan(v, generatePlanForVehicle(newAssignment.get(v),v));
+						} catch (IllegalPlanException e) {
+							System.out.println("Old Plan: ");
+							System.out.println(assignment);
+							System.out.println("Wron new plan:");
+							System.out.println(newAssignment);
+							throw e;
+						}
+					}
 				}
 			}
 
@@ -178,7 +206,7 @@ public class CentralizedPlanner implements CentralizedBehavior {
 		} while (stepsTotal < MAX_STEPS
 				&& stepsWithoutImprovement < MAX_STEPS_WITHOUT_IMPROVEMENT
 				&& (System.currentTimeMillis() - time_start) < timeout_plan - 100);
-		System.out.println(stepsTotal);
+		//System.out.println(stepsTotal);
 		return assignment;
 	}
 
@@ -240,10 +268,10 @@ public class CentralizedPlanner implements CentralizedBehavior {
 		for (int i = 0; i < spaceLeft.length - 1; i++) {
 			if (spaceLeft[i] < weight) {
 				for (int k = stop; k < i; k++) {
-					for (int l = k; l <= i; l++) {
+					for (int l = k; l < i; l++) {
 						if (random.nextDouble() < 1d / p) {
 							index1 = k;
-							index2 = l+1;
+							index2 = l + 1;
 						}
 						p++;
 					}
@@ -263,6 +291,8 @@ public class CentralizedPlanner implements CentralizedBehavior {
 
 		vehicleAssignment.add(index1, taskToPickup.get(task));
 		vehicleAssignment.add(index2, taskToDelivery.get(task));
+
+
 		return assignment;
 	}
 
@@ -296,7 +326,7 @@ public class CentralizedPlanner implements CentralizedBehavior {
 	}
 
 
-	private Assignment getRandomAssignment(TaskSet tasks) {
+	private Assignment getRandomAssignment(Set<Task> tasks) {
 		Assignment a = new Assignment();
 
 		//create Map with empty lists
@@ -325,6 +355,14 @@ public class CentralizedPlanner implements CentralizedBehavior {
 				actionsLeft.remove(i);
 				actionsLeft.add(new PublicAction(action.task, PublicAction.ActionType.DELIVERY));
 				map.put(action.task, vehicle);
+			}
+		}
+
+		if (tasks instanceof TaskSet) {
+
+			PlanVerifier vf = new PlanVerifier(topology, (TaskSet) tasks);
+			for (Vehicle v : vehicles) {
+				vf.verifyPlan(v, generatePlanForVehicle(a.get(v),v));
 			}
 		}
 		return a;
@@ -541,7 +579,7 @@ public class CentralizedPlanner implements CentralizedBehavior {
 		if (assignmentCost(oldA) > bestCost) {
 			return randomBestA;
 		} else if (assignmentCost(oldA) < bestCost) {
-			System.out.println("chose old assignment");
+			//System.out.println("chose old assignment");
 			return oldA;
 		} else {
 			if (Math.random() > CHANGEMENT_PROBABILITY) {
