@@ -6,6 +6,6 @@
 			<vehicle name="Vehicle 1"/>
 			<vehicle name="Vehicle 2"/>
 		</agent>
-		<agent name="auction-main">
+		<agent name="auctionAgent3">
 			<vehicle name="Vehicle 3"/>
 			<vehicle name="Vehicle 4"/>

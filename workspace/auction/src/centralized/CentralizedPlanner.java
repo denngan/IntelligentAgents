@@ -71,6 +71,10 @@ public class CentralizedPlanner implements CentralizedBehavior {
 	public List<Plan> plan(List<Vehicle> vehicles, TaskSet tasks) {
 		long time_start = System.currentTimeMillis();
 
+		if (tasks.isEmpty()) {
+			return new LinkedList<>();
+		}
+
 		Assignment assignment = stochasticRestart(tasks, timeout_plan);
 
 		List<Plan> plans = generatePlans(assignment);
@@ -148,7 +152,7 @@ public class CentralizedPlanner implements CentralizedBehavior {
 	 * @param tasks
 	 * @return
 	 */
-	private Assignment SLS(Set<Task> tasks) throws Exception {
+	private Assignment SLS(Set<Task> tasks) throws IllegalPlanException {
 		long time_start = System.currentTimeMillis();
 		int stepsTotal = 0;
 		int stepsWithoutImprovement = 0;
@@ -178,6 +182,7 @@ public class CentralizedPlanner implements CentralizedBehavior {
 							System.out.println(assignment);
 							System.out.println("Wron new plan:");
 							System.out.println(newAssignment);
+							System.out.println(e);
 							throw e;
 						}
 					}
@@ -268,7 +273,7 @@ public class CentralizedPlanner implements CentralizedBehavior {
 		for (int i = 0; i < spaceLeft.length - 1; i++) {
 			if (spaceLeft[i] < weight) {
 				for (int k = stop; k < i; k++) {
-					for (int l = k; l < i; l++) {
+					for (int l = k; l < i; l++) { //TODO check bounds
 						if (random.nextDouble() < 1d / p) {
 							index1 = k;
 							index2 = l + 1;
@@ -294,35 +299,6 @@ public class CentralizedPlanner implements CentralizedBehavior {
 
 
 		return assignment;
-	}
-
-	private Assignment selectInitialSolution(TaskSet tasks) {
-		int numVehicles = vehicles.size();
-		Assignment a = new Assignment();
-
-		//create Map with empty lists
-		for (Vehicle vehicle : vehicles) {
-			a.put(vehicle, new VehicleAssignment());
-		}
-
-		//add each task randomly to car
-		for (Task task : tasks) {
-			//chose car randomly
-			Random random = new Random();
-			int randomVehicleIndex = random.nextInt(numVehicles);
-
-			//check that task fits
-			//could be infinite loop! do differently (for loop for limited tries)
-//			while (task.weight > vehicles.get(randomVehicleIndex).capacity()) {
-//				random = new Random();
-//				randomVehicleIndex = random.nextInt(numVehicles + 1);
-//			}
-
-			//add pickup action and delivery action to vehicle's list
-			a.get(vehicles.get(randomVehicleIndex)).add(new PublicAction(task, PublicAction.ActionType.PICKUP));
-			a.get(vehicles.get(randomVehicleIndex)).add(new PublicAction(task, PublicAction.ActionType.DELIVERY));
-		}
-		return a;
 	}
 
 
@@ -383,179 +359,6 @@ public class CentralizedPlanner implements CentralizedBehavior {
 		return i;
 	}
 
-	private int[] load(VehicleAssignment vehicleAssignment){
-		int[] loadArray = new int[vehicleAssignment.size() + 2];
-		loadArray[0] = 0;
-		for (int j = 0; j < vehicleAssignment.size(); j++) {
-			if (vehicleAssignment.get(j).actionType == PublicAction.ActionType.PICKUP) {
-				loadArray[j + 1] = loadArray[j] + vehicleAssignment.get(j).task.weight;
-			} else { // delivery
-				loadArray[j + 1] = loadArray[j] - vehicleAssignment.get(j).task.weight;
-			}
-		}
-		loadArray[loadArray.length - 1] = 0;
-		return loadArray;
-	}
-
-	private Set<Assignment> chooseNeighbours(Assignment oldAssignment, TaskSet tasks) {
-		Set<Assignment> neighbours = new HashSet<>();
-		Random random = new Random();
-
-		// choose a random vehicle with tasks
-		Vehicle randomVehicle;
-		do {
-			randomVehicle = vehicles.get(random.nextInt(vehicles.size()));
-		} while (oldAssignment.get(randomVehicle).isEmpty());
-
-		final Vehicle chosenVehicle = randomVehicle;
-		// Applying the changing vehicle operator :
-		vehicles.forEach(vehicle -> {
-			if (vehicle != chosenVehicle) {
-//				for (int i = 0; i < oldAssignment.get(chosenVehicle).size(); i++) {
-//					PublicAction action = oldAssignment.get(chosenVehicle).get(i);
-//					if (action.actionType == PublicAction.ActionType.PICKUP
-//							&& action.task.weight <= vehicle.capacity()) {
-//						neighbours.add(changingVehicle(oldAssignment, chosenVehicle, vehicle, i));
-//					}
-//				}
-				PublicAction action = oldAssignment.get(chosenVehicle).get(0);
-				if (action.actionType == PublicAction.ActionType.PICKUP
-						&& action.task.weight <= vehicle.capacity()) {
-					neighbours.add(changingVehicle(oldAssignment, chosenVehicle, vehicle, 0));
-				}
-
-			}
-		});
-		// System.out.println("Number of neighbours: " + neighbours.size());
-
-		// Applying the Changing task order operator :
-		// compute the number of tasks of the vehicle
-		VehicleAssignment vehicleAssignment = oldAssignment.get(chosenVehicle);
-		int length = vehicleAssignment.size();
-		if (length >= 4) { // 4 instead of 2 since every task appears twice: as pickup and delivery
-			for (int i = 0; i < length - 1; i++) {
-				if (oldAssignment.get(chosenVehicle).get(i).actionType == PublicAction.ActionType.PICKUP) {
-					neighbours.addAll(changingTaskOrder(oldAssignment, chosenVehicle, i));
-				}
-			}
-		}
-
-		// System.out.println("Number of neighbours: " + neighbours.size());
-		return neighbours;
-	}
-
-	/**
-	 * Permutes
-	 *
-	 * @param oldAssignment
-	 * @param vehicle
-	 * @param indexTask
-	 * @return
-	 */
-	private Set<Assignment> changingTaskOrder(Assignment oldAssignment, Vehicle vehicle, int indexTask) {
-		Set<Assignment> neighbours = new HashSet<>();
-
-
-		Assignment assignment = new Assignment(oldAssignment);
-		VehicleAssignment vehicleAssignment = assignment.get(vehicle);
-
-		PublicAction pickup = oldAssignment.get(vehicle).get(indexTask);
-		Task toMove = pickup.task;
-		PublicAction delivery = null;
-		assert pickup.task != null;
-
-		for (int i = indexTask + 1; i < vehicleAssignment.size(); i++) {
-			PublicAction current = vehicleAssignment.get(i);
-			if (current.task == toMove) {
-				assert current.actionType == PublicAction.ActionType.DELIVERY;
-				delivery = current;
-				assignment.get(vehicle).remove(i);
-				assignment.get(vehicle).remove(indexTask);
-				break;
-			}
-		}
-		assert delivery != null;
-
-		// precompute the space left after each action
-		int weight = toMove.weight;
-		int[] spaceLeft = new int[vehicleAssignment.size() + 2];
-		spaceLeft[0] = vehicle.capacity();
-		for (int j = 0; j < vehicleAssignment.size(); j++) {
-			if (vehicleAssignment.get(j).actionType == PublicAction.ActionType.PICKUP) {
-				spaceLeft[j + 1] = spaceLeft[j] - vehicleAssignment.get(j).task.weight;
-			} else { // delivery
-				spaceLeft[j + 1] = spaceLeft[j] + vehicleAssignment.get(j).task.weight;
-			}
-		}
-		spaceLeft[spaceLeft.length - 1] = weight;
-
-		int stop = 0;
-		for (int i = 0; i < spaceLeft.length - 1; i++) {
-			if (spaceLeft[i] < weight) {
-				for (int k = stop; k < i; k++) {
-					for (int l = k; l <= i; l++) {
-						Assignment temp = new Assignment(assignment);
-						temp.get(vehicle).add(k, pickup);
-						temp.get(vehicle).add(l + 1, delivery); // index + 1 since the pickup shifts the order
-						neighbours.add(temp);
-					}
-				}
-				stop = i + 1;
-			}
-		}
-		for (int k = stop; k < spaceLeft.length - 1; k++) {
-			for (int l = k; l < spaceLeft.length - 1; l++) {
-				Assignment temp = new Assignment(assignment);
-				temp.get(vehicle).add(k, pickup);
-				temp.get(vehicle).add(l + 1, delivery); // index + 1 since the pickup shifts the order
-				neighbours.add(temp);
-			}
-		}
-		return neighbours;
-	}
-
-	/**
-	 * Returns a new assignment where the first task of the vehicleFrom is transferred to vehicleTo (in front).
-	 * Throws exception if vehicleFrom has no task
-	 *
-	 * @param oldAssignment
-	 * @param vehicleFrom
-	 * @param vehicleTo
-	 * @return
-	 */
-	private Assignment changingVehicle(Assignment oldAssignment, Vehicle vehicleFrom, Vehicle vehicleTo) {
-		Assignment assignment = new Assignment(oldAssignment);
-
-		//assignment.get(vehicle).removeIf(a -> a.task == toMove);
-		PublicAction pickup = oldAssignment.get(vehicleFrom).get(0);
-		Task toMove = pickup.task;
-		PublicAction delivery = null;
-		for (int i = 1; i < oldAssignment.get(vehicleFrom).size(); i++) {
-			PublicAction current = oldAssignment.get(vehicleFrom).get(i);
-			if (current.task == toMove) {
-				delivery = current;
-				assignment.get(vehicleFrom).remove(i);
-				assignment.get(vehicleFrom).remove(0);
-				break;
-			}
-		}
-		assert delivery != null;
-		// add infront of vehicleTo
-		assignment.get(vehicleTo).add(0, pickup);
-		assignment.get(vehicleTo).add(1, delivery);
-		return assignment;
-	}
-
-	private Assignment changingVehicle(Assignment oldAssignment, Vehicle vehicleFrom, Vehicle vehicleTo, int index) {
-		Assignment assignment = new Assignment(oldAssignment);
-		PublicAction action = assignment.get(vehicleFrom).get(index);
-		assert action.actionType == PublicAction.ActionType.PICKUP;
-		assignment.get(vehicleFrom).remove(index);
-		assignment.get(vehicleFrom).add(0, action);
-
-		//return oldAssignment;
-		return changingVehicle(assignment, vehicleFrom, vehicleTo);
-	}
 
 	private Assignment localChoice(Set<Assignment> neighbors, Assignment oldA) {
 		List<Assignment> bestAssignments = new LinkedList<>();
@@ -597,6 +400,7 @@ public class CentralizedPlanner implements CentralizedBehavior {
 
 
 	private double assignmentCost(Assignment A) {
+		assert A!=null;
 		double costs = 0.0;
 
 		for (Vehicle vehicle : vehicles) {
@@ -624,13 +428,14 @@ public class CentralizedPlanner implements CentralizedBehavior {
 
 		for (PublicAction action : actions) {
 			assert action.moveTo != null;
-			for (City city : current.pathTo(action.moveTo)) {
-				plan.appendMove(city);
+			if (current != action.moveTo) {
+				for (City city : current.pathTo(action.moveTo)) {
+					plan.appendMove(city);
+				}
 			}
 
 			if (action.actionType == PublicAction.ActionType.PICKUP) {
 				plan.appendPickup(action.task);
-
 			} else if (action.actionType == PublicAction.ActionType.DELIVERY) {
 				plan.appendDelivery(action.task);
 			}

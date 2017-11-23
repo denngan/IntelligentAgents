@@ -17,34 +17,49 @@ import java.util.List;
 import java.util.Set;
 
 public class AuctionAgent implements AuctionBehavior {
-	private CentralizedPlanner centralizedPlanner = new CentralizedPlanner();
-	private Set<Task> auctionedTasks = new HashSet<>();
-	private long cumulatedCostForAuction = 0;
+	protected CentralizedPlanner centralizedPlanner = new CentralizedPlanner();
+	protected long cumulatedCostForAuction = 0;
 
-	private Assignment currentAssignment;
-	private Assignment temporaryAssignment;
+	protected Assignment currentAssignment;
+	protected Assignment temporaryAssignment;
 
 
-	private long timeOutSetup;
-	private long timeOutBid;
-	private long timeOutPlan;
+	protected long timeOutSetup;
+	protected long timeOutBid;
+	protected long timeOutPlan;
 
-	List<Long> enemiesOffers = new ArrayList<>();
-	int enemiesId;
+	protected AuctionAgent enemy;
+	protected int enemiesId;
+	protected int ourId;
 
-	Topology topology;
-	TaskDistribution taskDistribution;
-	Agent agent;
-	List<Vehicle> vehicles;
+	protected List<Task> taskHistory = new ArrayList<>();
+	protected List<Long> ourBids = new ArrayList<>();
+	protected List<Long> enemiesBids = new ArrayList<>();
+	protected List<Integer> winner = new ArrayList<>();
+	
+	protected Set<Task> ourWonTasks = new HashSet<>();
+	protected Set<Task> enemiesWonTasks = new HashSet<>();
+
+	protected Topology topology;
+	protected TaskDistribution taskDistribution;
+	protected Agent agent;
+	protected List<Vehicle> vehicles;
+
+	protected int round = 0;
+
 
 	@Override
 	public void setup(Topology topology, TaskDistribution distribution, Agent agent) {
+		setup(topology, distribution, agent, false);
+	}
+	
+	public void setup(Topology topology, TaskDistribution distribution, Agent agent, boolean isEnemy) {
 		// this code is used to get the timeouts
 		LogistSettings ls = null;
 		try {
 			ls = Parsers.parseSettings("config\\settings_auction.xml");
 		} catch (Exception exc) {
-			System.out.println("There was a problem loading the configuration file.");
+			println("There was a problem loading the configuration file.");
 		}
 
 		// the setup method cannot last more than timeout_setup milliseconds
@@ -60,43 +75,74 @@ public class AuctionAgent implements AuctionBehavior {
 		this.topology = topology;
 		this.taskDistribution = distribution;
 		this.agent = agent;
+		this.ourId = agent.id();
+		enemiesId = 1 - ourId; // Assumption: Id = 0 or 1, 2 players
 		this.vehicles = agent.vehicles();
 		centralizedPlanner.setup(topology, distribution, agent, timeOutSetup, timeOutBid);
+		
+		if (!isEnemy) {
+			enemy = new AuctionAgent();
+			enemy.setup(topology, distribution, agent, true);
+			enemy.ourId = enemiesId;
+			enemy.enemiesId = ourId;
+			enemy.enemy = null;
+		}
+		printName();
+	}
+
+	protected void printName() {
+		println("I am AuctionAgent");
 	}
 
 	@Override
 	public Long askPrice(Task task) {
-		double marginalCost = computeMarginalCost(task, auctionedTasks, timeOutBid);
-		System.out.println("Our Bid is " + marginalCost);
-		return (long) marginalCost;
+		long bid = computeBid(task);
+		println("Our Bid is " + bid);
+		round++;
+		return bid;
+	}
+
+	protected Long computeBid(Task task) {
+		return (long) computeMarginalCost(task, ourWonTasks, timeOutBid) -1;
 	}
 
 	@Override
 	public void auctionResult(Task lastTask, int lastWinner, Long[] lastOffers) {
-		enemiesOffers.add(lastOffers[enemiesId]);
+		taskHistory.add(lastTask);
+		ourBids.add(lastOffers[ourId]);
+		enemiesBids.add(lastOffers[enemiesId]);
+		winner.add(lastWinner);
 
-		if (lastWinner == agent.id()) {
-			System.out.println("We won");
-			cumulatedCostForAuction += lastOffers[agent.id()];
-			auctionedTasks.add(lastTask);
+		if (lastWinner == ourId) {
+			//println("We won");
+			cumulatedCostForAuction += lastOffers[ourId];
+			ourWonTasks.add(lastTask);
 			currentAssignment = temporaryAssignment;
 			temporaryAssignment = null;
+		} else {
+			enemiesWonTasks.add(lastTask);
 		}
+
+		if (enemy != null) {
+			enemy.auctionResult(lastTask, lastWinner, lastOffers);
+		} 
 	}
 
 	@Override
 	public List<Plan> plan(List<Vehicle> vehicles, TaskSet tasks) {
-		System.out.println("After auction: Computing plan...");
+		println("Bids: " + cumulatedCostForAuction);
+		println("Enemy's bids" + enemy.cumulatedCostForAuction);
+		println("After auction: Computing plan...");
 		centralizedPlanner = new CentralizedPlanner();
 		centralizedPlanner.setup(topology, taskDistribution, agent, timeOutSetup, timeOutPlan);
 		List<Plan> plans = centralizedPlanner.plan(vehicles, tasks);
 		long reward = tasks.stream().mapToLong(task -> task.reward).sum();
-		System.out.println("Our reward: " + reward);
+		println("Our reward: " + reward);
 		return plans;
 		// TODO use currentassignment
 	}
 
-	private double computeMarginalCost(Task task, Set<Task> tasks, long timeOut) {
+	protected double computeMarginalCost(Task task, Set<Task> tasks, long timeOut) {
 		if (tasks instanceof TaskSet) {
 			tasks = ((TaskSet)tasks).clone();
 		} else {
@@ -104,8 +150,6 @@ public class AuctionAgent implements AuctionBehavior {
 		}
 		tasks.add(task);
 
-		centralizedPlanner = new CentralizedPlanner();
-		centralizedPlanner.setup(topology, taskDistribution, agent, timeOutSetup, timeOutPlan);
 		temporaryAssignment = centralizedPlanner.stochasticRestart(tasks, timeOut);
 
 		if (currentAssignment == null) {
@@ -114,5 +158,7 @@ public class AuctionAgent implements AuctionBehavior {
 		return temporaryAssignment.cost() - currentAssignment.cost();
 	}
 
-
+	protected void println(String s) {
+		System.out.println("(" + ourId + ") " + s);
+	}
 }
