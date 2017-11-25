@@ -21,7 +21,7 @@ public class AuctionAgent implements AuctionBehavior {
 	protected CentralizedPlanner centralizedPlanner = new CentralizedPlanner();
 	protected long cumulatedCostForAuction = 0;
 
-	protected Assignment currentAssignment;
+	protected Assignment currentAssignment = new Assignment();
 	protected Assignment temporaryAssignment;
 
 
@@ -107,7 +107,7 @@ public class AuctionAgent implements AuctionBehavior {
 	}
 
 	protected Long computeBid(Task task, long marginalCost) {
-		return marginalCost - 1;
+		return marginalCost;
 	}
 
 	@Override
@@ -132,10 +132,6 @@ public class AuctionAgent implements AuctionBehavior {
 			enemy.auctionResult(lastTask, lastWinner, lastOffers);
 			updateStrategy();
 		}
-
-		HashSet<Task> union = new HashSet<>(ourWonTasks);
-		union.addAll(enemiesWonTasks);
-		assert new HashSet<>(taskHistory).equals(union);
 	}
 
 	protected void updateStrategy() {
@@ -184,8 +180,6 @@ public class AuctionAgent implements AuctionBehavior {
 //	}
 
 	protected double computeMarginalCost(Task task, Set<Task> tasks, long timeOut) {
-		double result = 0;
-
 		double oldCost;
 		if (tasks.isEmpty()) {
 			oldCost = 0;
@@ -202,9 +196,11 @@ public class AuctionAgent implements AuctionBehavior {
 		return Math.max(0, newCost - oldCost);
 	}
 
+
 	protected double computeMarginalCost(Task task, long timeOut) {
 		return computeMarginalCost(task, ourWonTasks, timeOut);
 	}
+
 
 	protected void println(String s) {
 		if (enemy == null) {

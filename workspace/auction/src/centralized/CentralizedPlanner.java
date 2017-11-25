@@ -70,21 +70,20 @@ public class CentralizedPlanner implements CentralizedBehavior {
 
 	public List<Plan> plan(List<Vehicle> vehicles, TaskSet tasks) {
 		long time_start = System.currentTimeMillis();
+		List<Plan> plans;
 
 		if (tasks.isEmpty()) {
-			List<Plan> list = new LinkedList<>();
-			vehicles.forEach(vehicle -> list.add(new Plan(vehicle.getCurrentCity())));
+			plans = new LinkedList<>();
+			vehicles.forEach(vehicle -> plans.add(new Plan(vehicle.getCurrentCity())));
+		} else {
+			Assignment assignment = stochasticRestart(tasks, timeout_plan);
+			plans = generatePlans(assignment);
+
+			long time_end = System.currentTimeMillis();
+			long duration = time_end - time_start;
+			System.out.println("The plan was generated in " + duration + " milliseconds.");
+			System.out.println("The cost of the plan is " + assignmentCost(assignment) + ".");
 		}
-
-		Assignment assignment = stochasticRestart(tasks, timeout_plan);
-
-		List<Plan> plans = generatePlans(assignment);
-
-		long time_end = System.currentTimeMillis();
-		long duration = time_end - time_start;
-		System.out.println("The plan was generated in " + duration + " milliseconds.");
-		System.out.println("The cost of the plan is " + assignmentCost(assignment) + ".");
-
 
 		return plans;
 	}

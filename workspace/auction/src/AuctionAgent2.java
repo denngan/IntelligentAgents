@@ -1,3 +1,4 @@
+import logist.simulation.Vehicle;
 import logist.task.Task;
 
 import java.util.ArrayList;
@@ -5,6 +6,8 @@ import java.util.List;
 
 public class AuctionAgent2 extends AuctionAgent {
 	protected String name = "AA2";
+	// weights for our Cost
+	// case distinction for when the estimated enemy's cost is higher/lower than our cost
 	protected double weightLoosing = 0.5;
 	protected double weightWinning = 0.5;
 	protected List<Long> estimatedEnemysCosts = new ArrayList<>();
@@ -12,6 +15,7 @@ public class AuctionAgent2 extends AuctionAgent {
 	protected Long computeBid(Task task, long marginalCost) {
 		long enemiesMarginalCost = (long) enemy.computeMarginalCost(task, timeOutBid);
 		estimatedEnemysCosts.add(enemiesMarginalCost);
+
 		String msg = "" + marginalCost + " | " + enemiesMarginalCost;
 		if (marginalCost > enemiesMarginalCost) {
 			msg = msg + " !!!";
@@ -26,6 +30,13 @@ public class AuctionAgent2 extends AuctionAgent {
 			bid = (long) (weightWinning * marginalCost +  (1 - weightWinning) * enemiesMarginalCost) - 1;
 		}
 
+//		if (round == 0) {
+//			bid = (long) (task.pickupCity.distanceTo(task.deliveryCity) * vehicles.stream().mapToInt(Vehicle::costPerKm).sum() / vehicles.size());
+//		}
+
+
+		//
+		bid *= 1.2 - Math.exp(-0.17 * (round +1));
 		return bid;
 	}
 
@@ -37,7 +48,9 @@ public class AuctionAgent2 extends AuctionAgent {
 	@Override
 	protected void updateStrategy() {
 		if (ourBids.get(round) < enemiesBids.get(round)) {
-			weightWinning += (estimatedEnemysCosts.get(round) - enemiesBids.get(round)) / Math.max(estimatedEnemysCosts.get(round), enemiesBids.get(round)) * (1 - weightWinning) / (round + 1);
+			if (Math.max(estimatedEnemysCosts.get(round), enemiesBids.get(round)) != 0) {
+				weightWinning += (estimatedEnemysCosts.get(round) - enemiesBids.get(round)) / Math.max(estimatedEnemysCosts.get(round), enemiesBids.get(round)) * (1 - weightWinning) / (round + 1);
+			}
 		} else {
 
 		}

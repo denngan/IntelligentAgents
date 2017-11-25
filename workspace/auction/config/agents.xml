@@ -23,5 +23,10 @@
 		<set class-path="bin/"/>
 		<set class-name="AuctionAgent3"/>
 	</agent>
+
+	<agent name="copycat">
+		<set class-name="CopyCat"/>
+		<set class-path="bin/"/>
+	</agent>
 	
 </agents>
