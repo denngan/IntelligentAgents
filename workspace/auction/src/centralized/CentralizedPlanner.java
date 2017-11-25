@@ -72,7 +72,8 @@ public class CentralizedPlanner implements CentralizedBehavior {
 		long time_start = System.currentTimeMillis();
 
 		if (tasks.isEmpty()) {
-			return new LinkedList<>();
+			List<Plan> list = new LinkedList<>();
+			vehicles.forEach(vehicle -> list.add(new Plan(vehicle.getCurrentCity())));
 		}
 
 		Assignment assignment = stochasticRestart(tasks, timeout_plan);
@@ -183,7 +184,7 @@ public class CentralizedPlanner implements CentralizedBehavior {
 							System.out.println("Wron new plan:");
 							System.out.println(newAssignment);
 							System.out.println(e);
-							throw e;
+							//throw e;
 						}
 					}
 				}
@@ -243,7 +244,7 @@ public class CentralizedPlanner implements CentralizedBehavior {
 //		int[] loadArray = load(vehicleAssignment);
 //		boolean spaceLeft = true;
 //		for (int i = index; i < index2; i++) {
-//			if (loadArray[i] > vehicleTo.capacity() - task.weight) {
+//			if (loadArray[i] > vehicleTo.capacity() - task.weightLoosing) {
 //				spaceLeft = false;
 //				break;
 //			}

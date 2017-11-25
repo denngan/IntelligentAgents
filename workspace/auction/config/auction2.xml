@@ -15,7 +15,7 @@
 	<!-- define task distribution -->
 	<tasks number="15" rngSeed="-5897376051029796530">
 		<!--
-			the probabilities, rewards and weight of tasks
+			the probabilities, rewards and weightLoosing of tasks
 		-->
 		<reward distribution="constant" policy="short-distances" min="100" max="99999" />
 		<probability distribution="uniform" min="0.0" max="1.0" />

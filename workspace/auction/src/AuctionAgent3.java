@@ -2,8 +2,7 @@ import logist.task.Task;
 
 public class AuctionAgent3 extends AuctionAgent {
 	@Override
-	protected Long computeBid(Task task) {
-		double marginalCost = computeMarginalCost(task, ourWonTasks, timeOutBid);
+	protected Long computeBid(Task task, long marginalCost) {
 		marginalCost += 100;
 		double factor;
 		long bid;
@@ -19,6 +18,6 @@ public class AuctionAgent3 extends AuctionAgent {
 	}
 
 	protected void printName() {
-		println("I am AuctionAgent2");
+		println("I am AuctionAgent3");
 	}
 }

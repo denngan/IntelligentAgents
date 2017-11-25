@@ -4,6 +4,7 @@ import logist.agent.Agent;
 import logist.behavior.AuctionBehavior;
 import logist.config.Parsers;
 import logist.plan.Plan;
+import logist.plan.PlanVerifier;
 import logist.simulation.Vehicle;
 import logist.task.Task;
 import logist.task.TaskDistribution;
@@ -34,9 +35,10 @@ public class AuctionAgent implements AuctionBehavior {
 
 	protected List<Task> taskHistory = new ArrayList<>();
 	protected List<Long> ourBids = new ArrayList<>();
+	protected List<Long> ourCosts = new ArrayList<>();
 	protected List<Long> enemiesBids = new ArrayList<>();
 	protected List<Integer> winner = new ArrayList<>();
-	
+
 	protected Set<Task> ourWonTasks = new HashSet<>();
 	protected Set<Task> enemiesWonTasks = new HashSet<>();
 
@@ -45,14 +47,14 @@ public class AuctionAgent implements AuctionBehavior {
 	protected Agent agent;
 	protected List<Vehicle> vehicles;
 
-	protected int round = 0;
+	protected int round = -1;
 
 
 	@Override
 	public void setup(Topology topology, TaskDistribution distribution, Agent agent) {
 		setup(topology, distribution, agent, false);
 	}
-	
+
 	public void setup(Topology topology, TaskDistribution distribution, Agent agent, boolean isEnemy) {
 		// this code is used to get the timeouts
 		LogistSettings ls = null;
@@ -79,7 +81,7 @@ public class AuctionAgent implements AuctionBehavior {
 		enemiesId = 1 - ourId; // Assumption: Id = 0 or 1, 2 players
 		this.vehicles = agent.vehicles();
 		centralizedPlanner.setup(topology, distribution, agent, timeOutSetup, timeOutBid);
-		
+
 		if (!isEnemy) {
 			enemy = new AuctionAgent();
 			enemy.setup(topology, distribution, agent, true);
@@ -96,14 +98,16 @@ public class AuctionAgent implements AuctionBehavior {
 
 	@Override
 	public Long askPrice(Task task) {
-		long bid = computeBid(task);
-		println("Our Bid is " + bid);
 		round++;
+		long marginalCost = (long) computeMarginalCost(task, timeOutBid);
+		ourCosts.add(marginalCost);
+		long bid = computeBid(task, marginalCost);
+		println("Our Bid is " + bid);
 		return bid;
 	}
 
-	protected Long computeBid(Task task) {
-		return (long) computeMarginalCost(task, ourWonTasks, timeOutBid) -1;
+	protected Long computeBid(Task task, long marginalCost) {
+		return marginalCost - 1;
 	}
 
 	@Override
@@ -114,24 +118,36 @@ public class AuctionAgent implements AuctionBehavior {
 		winner.add(lastWinner);
 
 		if (lastWinner == ourId) {
-			//println("We won");
+			println("We won");
 			cumulatedCostForAuction += lastOffers[ourId];
 			ourWonTasks.add(lastTask);
 			currentAssignment = temporaryAssignment;
 			temporaryAssignment = null;
 		} else {
+			println("We lost");
 			enemiesWonTasks.add(lastTask);
 		}
 
 		if (enemy != null) {
 			enemy.auctionResult(lastTask, lastWinner, lastOffers);
-		} 
+			updateStrategy();
+		}
+
+		HashSet<Task> union = new HashSet<>(ourWonTasks);
+		union.addAll(enemiesWonTasks);
+		assert new HashSet<>(taskHistory).equals(union);
+	}
+
+	protected void updateStrategy() {
 	}
 
 	@Override
 	public List<Plan> plan(List<Vehicle> vehicles, TaskSet tasks) {
+		assert ourWonTasks.equals(new HashSet<>(tasks));
+
+		println("Current costs: " + currentAssignment.cost());
 		println("Bids: " + cumulatedCostForAuction);
-		println("Enemy's bids" + enemy.cumulatedCostForAuction);
+		println("Enemy's bids: " + enemy.cumulatedCostForAuction);
 		println("After auction: Computing plan...");
 		centralizedPlanner = new CentralizedPlanner();
 		centralizedPlanner.setup(topology, taskDistribution, agent, timeOutSetup, timeOutPlan);
@@ -142,23 +158,59 @@ public class AuctionAgent implements AuctionBehavior {
 		// TODO use currentassignment
 	}
 
+//	protected double computeMarginalCost(Task task, Set<Task> tasks, long timeOut) {
+//		double result = 0;
+//		double oldCost;
+//		if (tasks.size() == 0) {
+//			oldCost = 0;
+//		} else
+//			oldCost = centralizedPlanner.stochasticRestart(tasks, timeOut).cost();
+//
+//		Set<Task> tasks2;
+//		if (tasks instanceof TaskSet) {
+//			tasks2 = ((TaskSet) tasks).clone();
+//		} else {
+//			tasks2 = new HashSet<>(tasks);
+//		}
+//		tasks2.add(task);
+//
+//		temporaryAssignment = centralizedPlanner.stochasticRestart(tasks2, timeOut);
+//
+//		if (currentAssignment == null) {
+//			return temporaryAssignment.cost();
+//		}
+//		//return temporaryAssignment.cost() - currentAssignment.cost();
+//		return oldCost - currentAssignment.cost();
+//	}
+
 	protected double computeMarginalCost(Task task, Set<Task> tasks, long timeOut) {
-		if (tasks instanceof TaskSet) {
-			tasks = ((TaskSet)tasks).clone();
+		double result = 0;
+
+		double oldCost;
+		if (tasks.isEmpty()) {
+			oldCost = 0;
 		} else {
-			tasks = new HashSet<>(tasks);
+			oldCost = centralizedPlanner.stochasticRestart(tasks, timeOut).cost();
 		}
-		tasks.add(task);
 
-		temporaryAssignment = centralizedPlanner.stochasticRestart(tasks, timeOut);
+		Set<Task> newTasks = new HashSet<>(tasks);
+		newTasks.add(task);
 
-		if (currentAssignment == null) {
-			return temporaryAssignment.cost();
-		}
-		return temporaryAssignment.cost() - currentAssignment.cost();
+		temporaryAssignment = centralizedPlanner.stochasticRestart(newTasks, timeOut);
+		double newCost = temporaryAssignment.cost();
+
+		return Math.max(0, newCost - oldCost);
+	}
+
+	protected double computeMarginalCost(Task task, long timeOut) {
+		return computeMarginalCost(task, ourWonTasks, timeOut);
 	}
 
 	protected void println(String s) {
-		System.out.println("(" + ourId + ") " + s);
+		if (enemy == null) {
+			System.out.println("(" + ourId + "E) " + s);
+		} else {
+			System.out.println("(" + ourId + ") " + s);
+		}
 	}
 }

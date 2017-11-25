@@ -1,5 +1,6 @@
 package centralized;
 
+import logist.plan.Plan;
 import logist.simulation.Vehicle;
 
 import java.util.*;
@@ -22,5 +23,14 @@ public class Assignment extends HashMap<Vehicle, VehicleAssignment> {
 		}
 
 		return cost;
+	}
+
+	public List<Plan> generatePlans(List<Vehicle> vehicles) {
+		List<Plan> plans = new LinkedList<>();
+		for (Vehicle vehicle : vehicles) {
+			plans.add(get(vehicle).generatePlanForVehicle(vehicle));
+		}
+
+		return plans;
 	}
 }

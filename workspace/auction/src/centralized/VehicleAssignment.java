@@ -1,5 +1,7 @@
 package centralized;
 
+import logist.plan.Plan;
+import logist.simulation.Vehicle;
 import logist.task.Task;
 import logist.topology.Topology;
 
@@ -38,5 +40,29 @@ public class VehicleAssignment extends LinkedList<PublicAction> {
 		Task toRemove = get(index).task;
 		this.removeIf(a -> a.task == toRemove);
 		return toRemove;
+	}
+
+	public Plan generatePlanForVehicle(Vehicle vehicle) {
+		Topology.City current = vehicle.getCurrentCity();
+		Plan plan = new Plan(current);
+
+		for (PublicAction action : this) {
+			assert action.moveTo != null;
+			if (current != action.moveTo) {
+				for (Topology.City city : current.pathTo(action.moveTo)) {
+					plan.appendMove(city);
+				}
+			}
+
+			if (action.actionType == PublicAction.ActionType.PICKUP) {
+				plan.appendPickup(action.task);
+			} else if (action.actionType == PublicAction.ActionType.DELIVERY) {
+				plan.appendDelivery(action.task);
+			}
+
+			current = action.moveTo;
+		}
+
+		return plan;
 	}
 }
