@@ -1,6 +1,5 @@
 import logist.simulation.Vehicle;
 import logist.task.Task;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -47,12 +46,15 @@ public class AuctionAgent21 extends AuctionAgent {
 
 	@Override
 	protected void updateStrategy() {
-		if (ourBids.get(round) < enemiesBids.get(round)) {
-			if (Math.max(estimatedEnemysCosts.get(round), enemiesBids.get(round)) != 0) {
-				weightWinning += (estimatedEnemysCosts.get(round) - enemiesBids.get(round)) / Math.max(estimatedEnemysCosts.get(round), enemiesBids.get(round)) * (1 - weightWinning) / (round + 1);
-			}
-		} else {
-
-		}
+//		if (Math.max(estimatedEnemysCosts.get(round), enemiesBids.get(round)) == 0) {
+//			return;
+//		}
+//		if (winner.get(round) == ourId) {
+//			if (Math.max(estimatedEnemysCosts.get(round), enemiesBids.get(round)) != 0) {
+//				weightWinning += (estimatedEnemysCosts.get(round) - enemiesBids.get(round)) / Math.max(estimatedEnemysCosts.get(round), enemiesBids.get(round)) * (1 - weightWinning) / (round + 1);
+//			}
+//		} else {
+//
+//		}
 	}
 }
