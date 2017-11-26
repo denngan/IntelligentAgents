@@ -9,7 +9,7 @@ public class BalancedCopyCat extends AuctionAgent{
 	}
 
 	@Override
-	protected Long computeBid(Task task, long marginalCost) {
+	protected Long computeBid(Task task, long marginalCost, long timeout) {
 		if (round == 0) {
 			return marginalCost;
 		} else {

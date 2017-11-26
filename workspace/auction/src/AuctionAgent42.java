@@ -1,9 +1,8 @@
-import logist.simulation.Vehicle;
 import logist.task.Task;
 
 import java.util.ArrayList;
 import java.util.List;
-import logist.topology.Topology.City;
+
 import org.apache.commons.math.stat.regression.SimpleRegression;
 
 public class AuctionAgent42 extends AuctionAgent {
@@ -17,8 +16,8 @@ public class AuctionAgent42 extends AuctionAgent {
         
         
 	@Override
-	protected Long computeBid(Task task, long marginalCost) {
-		long enemiesMarginalCost = (long) enemy.computeMarginalCost(task, timeOutBid);
+	protected Long computeBid(Task task, long marginalCost, long timeout) {
+		long enemiesMarginalCost = (long) enemy.computeMarginalCost(task, timeout);
                 //long enemiesBid= (long)(0.5* marginalCost+0.5*enemiesMarginalCost);
                 
 		

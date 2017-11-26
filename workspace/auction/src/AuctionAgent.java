@@ -4,7 +4,6 @@ import logist.agent.Agent;
 import logist.behavior.AuctionBehavior;
 import logist.config.Parsers;
 import logist.plan.Plan;
-import logist.plan.PlanVerifier;
 import logist.simulation.Vehicle;
 import logist.task.Task;
 import logist.task.TaskDistribution;
@@ -71,9 +70,6 @@ public class AuctionAgent implements AuctionBehavior {
 		// the plan method cannot execute more than timeout_plan milliseconds
 		timeOutPlan = ls.get(LogistSettings.TimeoutKey.PLAN);
 
-		timeOutBid = 500;
-		timeOutPlan = 10000;
-
 		this.topology = topology;
 		this.taskDistribution = distribution;
 		this.agent = agent;
@@ -99,14 +95,14 @@ public class AuctionAgent implements AuctionBehavior {
 	@Override
 	public Long askPrice(Task task) {
 		round++;
-		long marginalCost = (long) computeMarginalCost(task, timeOutBid);
+		long marginalCost = (long) computeMarginalCost(task, timeOutBid / 2);
 		ourCosts.add(marginalCost);
-		long bid = computeBid(task, marginalCost);
+		long bid = computeBid(task, marginalCost, timeOutBid / 2);
 		println("Our Bid is " + bid);
 		return bid;
 	}
 
-	protected Long computeBid(Task task, long marginalCost) {
+	protected Long computeBid(Task task, long marginalCost, long timeout) {
 		return marginalCost;
 	}
 
@@ -191,13 +187,13 @@ public class AuctionAgent implements AuctionBehavior {
 		if (tasks.isEmpty()) {
 			oldCost = 0;
 		} else {
-			oldCost = centralizedPlanner.stochasticRestart(tasks, timeOut).cost();
+			oldCost = centralizedPlanner.stochasticRestart(tasks, timeOut / 2).cost();
 		}
 
 		Set<Task> newTasks = new HashSet<>(tasks);
 		newTasks.add(task);
 
-		temporaryAssignment = centralizedPlanner.stochasticRestart(newTasks, timeOut);
+		temporaryAssignment = centralizedPlanner.stochasticRestart(newTasks, timeOut / 2);
 		double newCost = temporaryAssignment.cost();
 
 		return Math.max(0, newCost - oldCost);

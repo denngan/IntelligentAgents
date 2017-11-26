@@ -50,7 +50,6 @@ public class CentralizedPlanner implements CentralizedBehavior {
 		timeout_setup = ls.get(LogistSettings.TimeoutKey.SETUP);
 		// the plan method cannot execute more than timeout_plan milliseconds
 		timeout_plan = ls.get(LogistSettings.TimeoutKey.PLAN);
-		timeout_plan = 10000; //TODO REMOVE
 		System.out.println("Time for plan:" + timeout_plan);
 		this.topology = topology;
 		this.distribution = distribution;
@@ -125,33 +124,15 @@ public class CentralizedPlanner implements CentralizedBehavior {
 			}
 
 			iteration++;
-			//System.out.println(assignmentCost(currentAssignment));
 			if (assignmentCost(currentAssignment) < bestCost) {
 				bestAssignment = currentAssignment;
 				bestCost = assignmentCost(currentAssignment);
 			}
 		}
-
-		//System.out.println("" + iteration + " iterations");
 		return bestAssignment;
-
-//		List<Assignment> list = new ArrayList<>();
-//		list.add(bestAssignment);
-//
-//		while (System.currentTimeMillis() < deadline + 1000) {
-//			Assignment a = list.get(ThreadLocalRandom.current().nextInt(list.size()));
-//			list.add(randomNeighbour(a));
-//		}
-//		System.out.println(list.size());
-//		Optional<Assignment> a = list.stream().min(Comparator.comparing(this::assignmentCost));
-//		System.out.println("Difference:" + (assignmentCost(bestAssignment) - assignmentCost(a.get())));
-//		return a.get();
 	}
 
-	/**
-	 * @param tasks
-	 * @return
-	 */
+
 	private Assignment SLS(Set<Task> tasks) throws IllegalPlanException {
 		long time_start = System.currentTimeMillis();
 		int stepsTotal = 0;
@@ -159,45 +140,13 @@ public class CentralizedPlanner implements CentralizedBehavior {
 		Assignment assignment = getRandomAssignment(tasks); // A
 		do {
 			Assignment oldAssignment = assignment; // A_old
-//			Set<Assignment> neighbours = chooseNeighbours(oldAssignment, tasks);
-			// add additional random solutions if search stagnates
-//			for (int i = 0; i < Math.sqrt(stepsWithoutImprovement); i++) {
-//				neighbours.add(getRandomAssignment(tasks));
-//			}
 			Set<Assignment> neighbours = new HashSet<>();
 			for (int i = 0; i < 120; i++) {
 				Assignment newAssignment = randomNeighbour(oldAssignment);
 				if (newAssignment != null) {
 					neighbours.add(newAssignment);
 				}
-				// TODO remove
-				if (tasks instanceof TaskSet) {
-
-					PlanVerifier vf = new PlanVerifier(topology, (TaskSet) tasks);
-					for (Vehicle v : vehicles) {
-						try {
-							vf.verifyPlan(v, generatePlanForVehicle(newAssignment.get(v),v));
-						} catch (IllegalPlanException e) {
-							System.out.println("Old Plan: ");
-							System.out.println(assignment);
-							System.out.println("Wron new plan:");
-							System.out.println(newAssignment);
-							System.out.println(e);
-							//throw e;
-						}
-					}
-				}
 			}
-
-//			List<Assignment> list = new ArrayList<>(neighbours);
-//
-//			for (int i = 0; i < 200; i++) {
-//				int r = ThreadLocalRandom.current().nextInt(list.size());
-//				Assignment newAssignment = randomNeighbour(list.get(r));
-//				if (newAssignment != null) {
-//					neighbours.add(newAssignment);
-//				}
-//			}
 
 			assignment = localChoice(neighbours, oldAssignment);
 
@@ -207,11 +156,10 @@ public class CentralizedPlanner implements CentralizedBehavior {
 			} else {
 				stepsWithoutImprovement = 0;
 			}
-			// System.out.println("Step " + stepsTotal + "; without improvement: " + stepsWithoutImprovement);
 		} while (stepsTotal < MAX_STEPS
 				&& stepsWithoutImprovement < MAX_STEPS_WITHOUT_IMPROVEMENT
 				&& (System.currentTimeMillis() - time_start) < timeout_plan - 100);
-		//System.out.println(stepsTotal);
+
 		return assignment;
 	}
 
@@ -236,23 +184,6 @@ public class CentralizedPlanner implements CentralizedBehavior {
 
 		Vehicle vehicleTo = vehicles.get(random.nextInt(vehicles.size()));
 		vehicleAssignment = assignment.get(vehicleTo);
-//		index = random.nextInt(vehicleAssignment.size() + 1);
-//		int index2 = random.nextInt(vehicleAssignment.size() - index + 1) + index + 1;
-//
-//		// check for validity
-//		int[] loadArray = load(vehicleAssignment);
-//		boolean spaceLeft = true;
-//		for (int i = index; i < index2; i++) {
-//			if (loadArray[i] > vehicleTo.capacity() - task.weightLoosing) {
-//				spaceLeft = false;
-//				break;
-//			}
-//		}
-//		if (spaceLeft) {
-//			vehicleAssignment.add(index, taskToPickup.get(task));
-//			vehicleAssignment.add(index2, taskToDelivery.get(task));
-//			return assignment;
-//		}
 
 		// precompute the space left after each action
 		int weight = task.weight;
@@ -333,14 +264,6 @@ public class CentralizedPlanner implements CentralizedBehavior {
 				map.put(action.task, vehicle);
 			}
 		}
-
-		if (tasks instanceof TaskSet) {
-
-			PlanVerifier vf = new PlanVerifier(topology, (TaskSet) tasks);
-			for (Vehicle v : vehicles) {
-				vf.verifyPlan(v, generatePlanForVehicle(a.get(v),v));
-			}
-		}
 		return a;
 	}
 
@@ -382,7 +305,6 @@ public class CentralizedPlanner implements CentralizedBehavior {
 		if (assignmentCost(oldA) > bestCost) {
 			return randomBestA;
 		} else if (assignmentCost(oldA) < bestCost) {
-			//System.out.println("chose old assignment");
 			return oldA;
 		} else {
 			if (Math.random() > CHANGEMENT_PROBABILITY) {
@@ -391,11 +313,6 @@ public class CentralizedPlanner implements CentralizedBehavior {
 				return randomBestA; //probability p
 			}
 		}
-//		if (Math.random() > CHANGEMENT_PROBABILITY) {
-//			return oldA;  //probability 1-p
-//		} else {
-//			return randomBestA; //probability p
-//		}
 	}
 
 

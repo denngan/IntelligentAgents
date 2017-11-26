@@ -4,59 +4,9 @@
 	<!-- A list of agents and their behavior classes -->
 	
 	<!-- #### AUCTION AGENTS ### -->
-	<agent name="auction-random">
-		<set class-path="bin/"/>
-		<set class-name="template.AuctionTemplate"/>
-	</agent>
-
-	<agent name="auction-main">
-		<set class-path="bin/" />
-		<set class-name="AuctionAgent"/>
-	</agent>
-
-	<agent name="auctionAgent2">
-		<set class-path="bin/"/>
-		<set class-name="AuctionAgent2"/>
-	</agent>
-
-	<agent name="auctionAgent21">
-		<set class-path="bin/"/>
-		<set class-name="AuctionAgent21"/>
-	</agent>
-
-	<agent name="auctionAgent22">
-		<set class-path="bin/"/>
-		<set class-name="AuctionAgent22"/>
-	</agent>
-
-	<agent name="auctionAgent3">
-		<set class-path="bin/"/>
-		<set class-name="AuctionAgent3"/>
-	</agent>
-
-	<agent name="copycat">
-		<set class-name="CopyCat"/>
-		<set class-path="bin/"/>
-	</agent>
-
-	<agent name="balancedcopycat">
-		<set class-name="BalancedCopyCat"/>
-		<set class-path="bin/"/>
-	</agent>
-
-	<agent name="advancedcopycat">
-		<set class-name="AdvancedCopyCat"/>
-		<set class-path="bin/"/>
-	</agent>
-	
-	<agent name="auctionAgent44">
+	<agent name="auction-main-29">
 		<set class-path="bin/"/>
 		<set class-name="AuctionAgent44"/>
-	</agent>
-
-	<agent name="auctionAgent42">
-		<set class-path="bin/"/>
-		<set class-name="AuctionAgent42"/>
 	</agent>
 
 </agents>

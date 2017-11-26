@@ -1,4 +1,3 @@
-import logist.simulation.Vehicle;
 import logist.task.Task;
 import java.util.ArrayList;
 import java.util.List;
@@ -11,8 +10,8 @@ public class AuctionAgent21 extends AuctionAgent {
 	protected double weightWinning = 0.5;
 	protected List<Long> estimatedEnemysCosts = new ArrayList<>();
 	@Override
-	protected Long computeBid(Task task, long marginalCost) {
-		long enemiesMarginalCost = (long) enemy.computeMarginalCost(task, timeOutBid);
+	protected Long computeBid(Task task, long marginalCost, long timeout) {
+		long enemiesMarginalCost = (long) enemy.computeMarginalCost(task, timeout);
 		estimatedEnemysCosts.add(enemiesMarginalCost);
 
 		String msg = "" + marginalCost + " | " + enemiesMarginalCost;

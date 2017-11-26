@@ -8,10 +8,10 @@ public class AdvancedCopyCat extends BalancedCopyCat {
 	}
 
 	@Override
-	protected Long computeBid(Task task, long marginalCost) {
+	protected Long computeBid(Task task, long marginalCost, long timeout) {
 		//double enemiesCost = enemy.computeMarginalCost(task, timeOutBid);
 
-		double bid = 0.5 * marginalCost + 0.25 * avgEnemyBid + 0.25 * enemy.computeMarginalCost(task, timeOutBid);
+		double bid = 0.5 * marginalCost + 0.25 * avgEnemyBid + 0.25 * enemy.computeMarginalCost(task, timeout);
 		if (round == 0) {
 			bid = marginalCost;
 		}

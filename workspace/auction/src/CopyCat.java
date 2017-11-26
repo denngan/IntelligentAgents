@@ -3,7 +3,7 @@ import logist.task.Task;
 
 public class CopyCat extends AuctionAgent {
 	@Override
-	protected Long computeBid(Task task, long marginalCost) {
+	protected Long computeBid(Task task, long marginalCost, long timeout) {
 		if (round == 0) {
 			return (long) (task.pickupCity.distanceTo(task.deliveryCity) * vehicles.stream().mapToInt(Vehicle::costPerKm).sum() / vehicles.size());
 		}

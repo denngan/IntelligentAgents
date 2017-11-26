@@ -2,7 +2,7 @@ import logist.task.Task;
 
 public class AuctionAgent3 extends AuctionAgent {
 	@Override
-	protected Long computeBid(Task task, long marginalCost) {
+	protected Long computeBid(Task task, long marginalCost, long timeout) {
 		marginalCost += 100;
 		double factor;
 		long bid;
