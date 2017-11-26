@@ -38,5 +38,15 @@
 		<set class-name="CopyCat"/>
 		<set class-path="bin/"/>
 	</agent>
+
+	<agent name="balancedcopycat">
+		<set class-name="BalancedCopyCat"/>
+		<set class-path="bin/"/>
+	</agent>
+
+	<agent name="advancedcopycat">
+		<set class-name="AdvancedCopyCat"/>
+		<set class-path="bin/"/>
+	</agent>
 	
 </agents>

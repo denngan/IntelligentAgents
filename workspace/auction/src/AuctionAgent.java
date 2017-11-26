@@ -139,6 +139,7 @@ public class AuctionAgent implements AuctionBehavior {
 
 	@Override
 	public List<Plan> plan(List<Vehicle> vehicles, TaskSet tasks) {
+		printName();
 		assert ourWonTasks.equals(new HashSet<>(tasks));
                 
                 double ourFinalCosts=currentAssignment.cost();
@@ -210,7 +211,7 @@ public class AuctionAgent implements AuctionBehavior {
 
 	protected void println(String s) {
 		if (enemy == null) {
-			System.out.println("(" + ourId + "E) " + s);
+
 		} else {
 			System.out.println("(" + ourId + ") " + s);
 		}

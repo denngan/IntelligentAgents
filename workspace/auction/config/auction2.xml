@@ -53,7 +53,7 @@
 				<set home="Den Haag" />
 				<set speed="90" />
 				<set capacity="80" />
-				<set cost-per-km="5" />
+				<set cost-per-km="3" />
 			</vehicle>
 			
 			<!-- the fourth vehicle (yellow) -->
@@ -62,11 +62,9 @@
 				<set home="Apeldoorn" />
 				<set speed="90" />
 				<set capacity="80" />
-				<set cost-per-km="5" />
+				<set cost-per-km="4" />
 			</vehicle>
-		</company>
-				
-		<company name="Company C">
+
 			<!-- the fifth vehicle (magenta) -->
 			<vehicle name="Vehicle 5">
 				<set color="#ff00ff" />
