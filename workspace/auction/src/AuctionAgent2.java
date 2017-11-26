@@ -33,11 +33,7 @@ public class AuctionAgent2 extends AuctionAgent {
 //		if (round == 0) {
 //			bid = (long) (task.pickupCity.distanceTo(task.deliveryCity) * vehicles.stream().mapToInt(Vehicle::costPerKm).sum() / vehicles.size());
 //		}
-
-
-		//
-		bid *= 1.2 - Math.exp(-0.17 * (round +1));
-		return bid;
+                return bid;
 	}
 
 	@Override

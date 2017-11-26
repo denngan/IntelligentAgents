@@ -140,8 +140,10 @@ public class AuctionAgent implements AuctionBehavior {
 	@Override
 	public List<Plan> plan(List<Vehicle> vehicles, TaskSet tasks) {
 		assert ourWonTasks.equals(new HashSet<>(tasks));
-
-		println("Current costs: " + currentAssignment.cost());
+                
+                double ourFinalCosts=currentAssignment.cost();
+                
+		println("Current costs: " + ourFinalCosts);
 		println("Bids: " + cumulatedCostForAuction);
 		println("Enemy's bids: " + enemy.cumulatedCostForAuction);
 		println("After auction: Computing plan...");
@@ -150,6 +152,10 @@ public class AuctionAgent implements AuctionBehavior {
 		List<Plan> plans = centralizedPlanner.plan(vehicles, tasks);
 		long reward = tasks.stream().mapToLong(task -> task.reward).sum();
 		println("Our reward: " + reward);
+                
+                double income= reward-ourFinalCosts;
+                println("Income: "+income);
+                
 		return plans;
 		// TODO use currentassignment
 	}

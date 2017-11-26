@@ -19,6 +19,16 @@
 		<set class-name="AuctionAgent2"/>
 	</agent>
 
+	<agent name="auctionAgent21">
+		<set class-path="bin/"/>
+		<set class-name="AuctionAgent21"/>
+	</agent>
+
+	<agent name="auctionAgent22">
+		<set class-path="bin/"/>
+		<set class-name="AuctionAgent22"/>
+	</agent>
+
 	<agent name="auctionAgent3">
 		<set class-path="bin/"/>
 		<set class-name="AuctionAgent3"/>
