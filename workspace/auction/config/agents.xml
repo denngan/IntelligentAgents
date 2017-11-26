@@ -49,4 +49,9 @@
 		<set class-path="bin/"/>
 	</agent>
 	
+	<agent name="auctionAgent44">
+		<set class-path="bin/"/>
+		<set class-name="AuctionAgent44"/>
+	</agent>
+
 </agents>
