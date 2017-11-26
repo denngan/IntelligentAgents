@@ -37,7 +37,7 @@ public class AuctionAgent22 extends AuctionAgent {
 
 		//
                 if(round<=13){
-		bid *= 1.2 - Math.exp(-0.17 * (round +1));}
+		bid *= 1.3 - 0.6*Math.exp(-0.19 * (round));}
                 
 		return bid;
 	}

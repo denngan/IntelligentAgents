@@ -15,7 +15,7 @@ public class AdvancedCopyCat extends BalancedCopyCat {
 		if (round == 0) {
 			bid = marginalCost;
 		}
-		bid *= 1.2 - Math.exp(-0.17 * (round +1));
+		bid *= 1.3 - 0.6*Math.exp(-0.19 * (round));
 		return (long) bid;
 	}
 

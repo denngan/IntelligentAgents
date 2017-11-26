@@ -6,8 +6,8 @@ import java.util.List;
 import logist.topology.Topology.City;
 import org.apache.commons.math.stat.regression.SimpleRegression;
 
-public class AuctionAgent44 extends AuctionAgent {
-	protected String name = "AA44";
+public class AuctionAgent42 extends AuctionAgent {
+	protected String name = "AA42";
 	// weights for our Cost
 	// case distinction for when the estimated enemy's cost is higher/lower than our cost
 	protected double weightLoosing = 0.5;
@@ -45,9 +45,8 @@ public class AuctionAgent44 extends AuctionAgent {
 
 		//
                 //if(round<=13){
-		//bid *= 1.2 - 0.4*Math.exp(-0.17 * (round));//}
-                //bid *= 1.4 - 0.6*Math.exp(-0.21 * (round));//}
-                bid *= 1.3 - 0.6*Math.exp(-0.19 * (round));//}
+		bid *= 1.4 - 0.6*Math.exp(-0.21 * (round));//}
+                
                 
                 estimatedEnemysCosts.add(enemiesMarginalCost);                
                 
@@ -81,7 +80,7 @@ public class AuctionAgent44 extends AuctionAgent {
 
 	@Override
 	protected void printName() {
-		println("I am AuctionAgent44");
+		println("I am AuctionAgent42");
 	}
 
 	@Override
